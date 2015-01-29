@@ -14,20 +14,13 @@ complete <- function(directory, id = 1:332) {
   ## get the set of files
   files <- sprintf("%s/%03d.csv", directory, id)
   
-  ## Get a column of data for each station
-  ## assumes all or nothing for pollutant observations
-  ### !!NOTE !! the following sappy returns different structures for single vs multiple files
-  dat <- sapply(files, read.csv, colClasses=c("NULL", "numeric", "NULL", "NULL"), nrows=4019) #nrows=10) #
+  ## Get a data frame of pollutant observations for each monitor
+  dat <- lapply(files, read.csv, colClasses=c("NULL", "numeric", "numeric", "NULL"), nrows=4019)
   
-  ## remove non-observations
-  cdat <- sapply(dat, na.omit)
-  
-  ## and count what's left
+  ## For each monitor, count the number of complete observations
   counts <- vector("integer")
-  if(length(id) ==  1) {
-    counts[1] <- length(cdat)
-  } else {
-    for(i in 1:length(id)){counts[i] <- length(cdat[[i]])}
+  for(i in seq_along(id)){
+    counts[i] <- sum(as.integer(complete.cases(dat[[i]][1:2])))
   }
 
   ## return the correctly labeled data structure
