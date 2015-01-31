@@ -16,9 +16,9 @@ corr <- function(directory, threshold = 0) {
   ## For each monitor, count the number of complete observations
   corrs <- vector("numeric")
   for(i in 1:length(files)){
-    cnt <- sum(as.integer(complete.cases(dat[[i]][1:2])))
-    if(cnt >= threshold){
-      append(corrs, cor(dat[[i]][1], dat[[i]][2], use="complete.obs"))
+    cnt <- sum(complete.cases(dat[[i]][1:2]))
+    if(cnt > threshold){
+      corrs <- append(corrs, cor(dat[[i]]$nitrate, dat[[i]]$sulfate, use="complete.obs"))
     }
   }
   
