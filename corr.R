@@ -18,7 +18,7 @@ corr <- function(directory, threshold = 0) {
   for(i in 1:length(files)){
     cnt <- sum(complete.cases(dat[[i]][1:2]))
     if(cnt > threshold){
-      corrs <- c(corrs, cor(dat[[i]]$sulfate, dat[[i]]$nitrate, use="pairwise.complete.obs"))
+      corrs <- c(corrs, cor(dat[[i]]$nitrate, dat[[i]]$sulfate, use="pairwise.complete.obs"))
     }
   }
   
