@@ -20,7 +20,7 @@ complete <- function(directory, id = 1:332) {
   ## For each monitor, count the number of complete observations
   counts <- vector("integer")
   for(i in seq_along(id)){
-    counts[i] <- sum(as.integer(complete.cases(dat[[i]][1:2])))
+    counts[i] <- sum(complete.cases(dat[[i]][1:2]))
   }
 
   ## return the correctly labeled data structure
