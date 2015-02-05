@@ -6,6 +6,7 @@ corr <- function(directory, threshold = 0) {
   ## nitrate and sulfate; the default is 0
   
   ## Returns a numeric vector of correlations
+  ## set options(digits=4) before submitting to print the correct numbers
   
   ## get the set of files
   files <- list.files(directory, full.names = T)
