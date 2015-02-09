@@ -28,7 +28,28 @@ gen_outcome_classes <- function(non_null, len=46) {
 ## This is the main function
 best <- function(state, outcome) {
   ## Read only the needed outcome data
+  # well, bummer. the data is all quoted strings,
+  # so read.csv chokes on coercing to numeric
+  #lst  <- list('character'=c(2,7), 'numeric'=c(11,17,23))
+  # can still limit data read in, but it will all be chars
+  lst  <- list('character'=c(2,7,11,17,23))
+  colc <- gen_outcome_classes(lst)
+  #print(str(colc))
+  outcomes <- read.csv('outcome-of-care-measures.csv', colClasses=colc, nrows=4706)
+  
   ## Check that state and outcome are valid
-  ## Split the data into states
-  ## Return hospital name in that state with lowest 30-day death rate
+  # Note: data includes District of Columbia (DC), Guam (GU),
+  #  Puerto Rico (PR), and the Virgin Islands (VI)
+  states <- unique(outcomes$State)
+  conds <- c("heart attack", "heart failure", "pneumonia")
+  
+  if(state %in% states & outcome %in% conds) {
+    ## Split the data into states
+    ## Return hospital name in that state with lowest 30-day death rate
+    #oc["heart attack"] <- sapply(oc["heart attack"],as.numeric)
+  
+    states
+  } else {
+    message("Invalid arguments: state = '", state, "', outcome = '", outcome, "'")
+  }
 }
