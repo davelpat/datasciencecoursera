@@ -35,20 +35,22 @@ best <- function(state, outcome) {
   lst  <- list('character'=c(2,7,11,17,23))
   colc <- gen_outcome_classes(lst)
   #print(str(colc))
-  outcomes <- read.csv('outcome-of-care-measures.csv', colClasses=colc, nrows=4706)
-  
+  data <- read.csv('outcome-of-care-measures.csv', colClasses=colc, nrows=4706)
+  names(data) <- c('Hospital.Name','State',"heart attack", "heart failure","pneumonia")
+
   ## Check that state and outcome are valid
   # Note: data includes District of Columbia (DC), Guam (GU),
   #  Puerto Rico (PR), and the Virgin Islands (VI)
-  states <- unique(outcomes$State)
-  conds <- c("heart attack", "heart failure", "pneumonia")
+  states <- unique(data$State)
+  conds <- names(data)[3:5]
   
   if(state %in% states & outcome %in% conds) {
     ## Split the data into states
+    outcomes <- split(data, data$State)
     ## Return hospital name in that state with lowest 30-day death rate
-    #oc["heart attack"] <- sapply(oc["heart attack"],as.numeric)
+    #outcomes[outcome] <- sapply(outcomes[outcome],as.numeric)
   
-    states
+    outcomes
   } else {
     message("Invalid arguments: state = '", state, "', outcome = '", outcome, "'")
   }
