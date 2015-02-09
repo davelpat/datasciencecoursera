@@ -25,6 +25,12 @@ gen_outcome_classes <- function(non_null, len=46) {
   classes
 }
 
+## Generates the error message for the "best" function
+## takes a string indicating which parameter is invalid
+best_error_invalid <- function(param, state, outcome) {
+  message('Error in best("', state, '", "', outcome, '") : invalid ', param)
+}
+
 ## This is the main function
 best <- function(state, outcome) {
   ## Read only the needed outcome data
@@ -44,7 +50,11 @@ best <- function(state, outcome) {
   states <- unique(data$State)
   conds <- names(data)[3:5]
   
-  if(state %in% states & outcome %in% conds) {
+  if(!(state %in% states)) {
+    best_error_invalid('state', state, outcome)
+  } else if(!(outcome %in% conds)) {
+    best_error_invalid('outcome', state, outcome)
+  } else {
     ## Split the data into states, keeping only the state of interest
     ## as a simple data frame
     state_data <- split(data, data$State)[[state]]
@@ -59,7 +69,5 @@ best <- function(state, outcome) {
     ## Return the first (alphabetically) hospital name
     if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
     best_hospital
-  } else {
-    message("Invalid arguments: state = '", state, "', outcome = '", outcome, "'")
   }
 }
