@@ -45,12 +45,20 @@ best <- function(state, outcome) {
   conds <- names(data)[3:5]
   
   if(state %in% states & outcome %in% conds) {
-    ## Split the data into states
-    outcomes <- split(data, data$State)
-    ## Return hospital name in that state with lowest 30-day death rate
-    #outcomes[outcome] <- sapply(outcomes[outcome],as.numeric)
-  
-    outcomes
+    ## Split the data into states, keeping only the state of interest
+    ## as a simple data frame
+    state_data <- split(data, data$State)[[state]]
+    ## Coerce outcome data to be numeric and suppress NA warning
+    state_data[outcome] <- 
+      suppressWarnings(sapply(state_data[outcome], as.numeric))
+    ## Get the hospital name(s) in that state with lowest 30-day death rate
+    best_hospital <- 
+      subset(state_data, 
+             state_data[outcome]==min(state_data[outcome],
+                                      na.rm=T))$Hospital.Name
+    ## Return the first (alphabetically) hospital name
+    if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
+    best_hospital
   } else {
     message("Invalid arguments: state = '", state, "', outcome = '", outcome, "'")
   }
