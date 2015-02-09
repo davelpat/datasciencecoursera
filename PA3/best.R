@@ -25,13 +25,6 @@ gen_outcome_classes <- function(non_null, len=46) {
   classes
 }
 
-## Generates the error message for the "best" function
-## takes a string indicating which parameter is invalid
-## and best function's parameters
-best_error_invalid <- function(param, state, outcome) {
-  message('Error in best("', state, '", "', outcome, '") : invalid ', param)
-}
-
 ## This is the main function
 best <- function(state, outcome) {
   ## Read only the needed outcome data
@@ -52,9 +45,9 @@ best <- function(state, outcome) {
   conds <- names(data)[3:5]
   
   if(!(state %in% states)) {
-    best_error_invalid('state', state, outcome)
+    stop('invalid state')
   } else if(!(outcome %in% conds)) {
-    best_error_invalid('outcome', state, outcome)
+    stop('invalid outcome')
   } else {
     ## Split the data into states, keeping only the state of interest
     ## as a simple data frame
