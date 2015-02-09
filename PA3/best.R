@@ -27,6 +27,7 @@ gen_outcome_classes <- function(non_null, len=46) {
 
 ## Generates the error message for the "best" function
 ## takes a string indicating which parameter is invalid
+## and best function's parameters
 best_error_invalid <- function(param, state, outcome) {
   message('Error in best("', state, '", "', outcome, '") : invalid ', param)
 }
