@@ -34,7 +34,6 @@ best <- function(state, outcome) {
   # can still limit data read in, but it will all be chars
   lst  <- list('character'=c(2,7,11,17,23))
   colc <- gen_outcome_classes(lst)
-  #print(str(colc))
   data <- read.csv('outcome-of-care-measures.csv', colClasses=colc, nrows=4706)
   names(data) <- c('Hospital.Name','State',"heart attack", "heart failure","pneumonia")
 
@@ -56,10 +55,9 @@ best <- function(state, outcome) {
     state_data[outcome] <- 
       suppressWarnings(sapply(state_data[outcome], as.numeric))
     ## Get the hospital name(s) in that state with lowest 30-day death rate
-    best_hospital <- 
-      subset(state_data, 
-             state_data[outcome]==min(state_data[outcome],
-                                      na.rm=T))$Hospital.Name
+    lowest_rate <- min(state_data[outcome], na.rm=T)
+    best_hospital <- subset(state_data, 
+                            state_data[outcome]==lowest_rate)$Hospital.Name
     ## Return the first (alphabetically) hospital name
     if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
     best_hospital
