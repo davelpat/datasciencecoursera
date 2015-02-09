@@ -6,6 +6,22 @@
 ## The outcomes can be one of "heart attack", "heart failure",
 ## or "pneumonia".
 
+## utility function to generate colClasses pattern
+## takes a list of class types and indices
+## returns a colClasses character vector
+gen_outcome_classes <- function(non_null, len=46) {
+  # generate the list of nulls as wide as the outcomes table
+  classes <- rep("NULL", len)
+  
+  # go through the list of non-null colmun indices,
+  # setting the colClasses vector to the desired class
+  for(klas in names(non_null)) {
+    for(idx in non_null[klas]) classes[idx] <- klas
+  }
+  classes
+}
+
+## This is the main function
 best <- function(state, outcome) {
   ## Read only the needed outcome data
   ## Check that state and outcome are valid
