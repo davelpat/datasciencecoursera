@@ -17,7 +17,7 @@ if(!exists("makeDataCache")) {
 }
 
 ## This is the main function
-rankhospital <- function(state, outcome) {
+rankhospital <- function(state, outcome, rank=1) {
   ## Read the needed outcome data
   outcome_data <- cacheOutcomes(data_cache)
   
@@ -25,9 +25,11 @@ rankhospital <- function(state, outcome) {
     ## get the data for the state of interest
     state_data <- outcome_data[[state]]
 
-    ## Get the hospital name(s) in that state with lowest 30-day death rate
-    lowest_rate <- min(state_data[outcome], na.rm=T)
-    best_hospital <- state_data[which(state_data[outcome]==lowest_rate),]$Hospital.Name
+    ## Get the list of ratings for that outcome for that state
+    ratings <- sort(na.omit(unique(as.vector(state_data[outcome][,1], "numeric"))))
+    
+    ## Get the hospital name(s) in that state with the mortaility rate rank
+    best_hospital <- state_data[which(state_data[outcome]==ratings[rank]),]$Hospital.Name
     ## Return the first (alphabetically) hospital name
     if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
     best_hospital
