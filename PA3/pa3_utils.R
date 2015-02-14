@@ -31,6 +31,12 @@ valid_args <- function (state, outcome) {
   TRUE
 }
 
+## get_ratings takes a data frame column of one state's outcomes for one condition
+## and returns the morbidity rates in an ordered numeric vector, from best to worst
+get_ratings <- function (state_outcomes) {
+  sort(na.omit(unique(as.vector(state_outcomes[,1], "numeric"))))
+}
+
 ## this function creates a DataCache and the functions that store and
 ## retrieve the DataCache from the parent environment
 

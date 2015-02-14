@@ -26,7 +26,9 @@ rankhospital <- function(state, outcome, rank=1) {
     state_data <- outcome_data[[state]]
 
     ## Get the list of ratings for that outcome for that state
-    ratings <- sort(na.omit(unique(as.vector(state_data[outcome][,1], "numeric"))))
+    ratings <- get_ratings(state_data[outcome])
+    
+    ## TODO: map best and worst ranks to the ratings
     
     ## validate rank is within range
     if(rank %in% seq_along(ratings)) {
