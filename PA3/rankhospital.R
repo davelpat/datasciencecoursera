@@ -28,7 +28,12 @@ rankhospital <- function(state, outcome, rank=1) {
     ## Get the list of ratings for that outcome for that state
     ratings <- get_ratings(state_data[outcome])
     
-    ## TODO: map best and worst ranks to the ratings
+    ## map "best" and "worst" ranks to the ratings
+    if(rank == "best") {
+      rank = 1
+    } else if(rank == "worst") {
+      rank = length(ratings)
+    }
     
     ## validate rank is within range
     if(rank %in% seq_along(ratings)) {
