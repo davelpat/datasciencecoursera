@@ -21,16 +21,7 @@ rankhospital <- function(state, outcome) {
   ## Read the needed outcome data
   outcome_data <- cacheOutcomes(data_cache)
   
-  ## Check that state and outcome are valid
-  # Note: outcome_data includes District of Columbia (DC), Guam (GU),
-  #  Puerto Rico (PR), and the Virgin Islands (VI)
-  # Note: states, the master list of valid states, is cached by casheOutcomes
-  
-  if(!(state %in% states)) {
-    stop('invalid state')
-  } else if(!(outcome %in% conditons)) {
-    stop('invalid outcome')
-  } else {
+  if(valid_args(state, outcome)) {
     ## get the data for the state of interest
     state_data <- outcome_data[[state]]
 

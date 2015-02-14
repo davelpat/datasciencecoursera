@@ -17,6 +17,20 @@ gen_outcome_classes <- function(non_null, len=46) {
   classes
 }
 
+## Check that state and outcome are valid
+# Note: outcome_data includes District of Columbia (DC), Guam (GU),
+#  Puerto Rico (PR), and the Virgin Islands (VI)
+# Note: states, the master list of valid states, is cached by casheOutcomes
+
+valid_args <- function (state, outcome) {
+  if(!(state %in% states)) {
+    stop('invalid state')
+  } else if(!(outcome %in% conditons)) {
+    stop('invalid outcome')
+  }
+  TRUE
+}
+
 ## this function creates a DataCache and the functions that store and
 ## retrieve the DataCache from the parent environment
 
