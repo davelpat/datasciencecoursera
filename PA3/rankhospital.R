@@ -28,10 +28,15 @@ rankhospital <- function(state, outcome, rank=1) {
     ## Get the list of ratings for that outcome for that state
     ratings <- sort(na.omit(unique(as.vector(state_data[outcome][,1], "numeric"))))
     
-    ## Get the hospital name(s) in that state with the mortaility rate rank
-    best_hospital <- state_data[which(state_data[outcome]==ratings[rank]),]$Hospital.Name
-    ## Return the first (alphabetically) hospital name
-    if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
+    ## validate rank is within range
+    if(rank %in% seq_along(ratings)) {
+      ## Get the hospital name(s) in that state with the mortaility rate rank
+      best_hospital <- state_data[which(state_data[outcome]==ratings[rank]),]$Hospital.Name
+      ## Return the first (alphabetically) hospital name
+      if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
+    } else {
+      best_hospital <- NA
+    }
     best_hospital
   }
 }
