@@ -7,7 +7,11 @@
 ## or "pneumonia".
 
 ## Load supporting functions
-source('~/GitHub/datasciencecoursera/R-programming/PA1/PA3/pa3_utils.R')
+if(!exists("makeDataCache")) {
+  source('~/GitHub/datasciencecoursera/R-programming/PA1/PA3/pa3_utils.R')
+  data_cache <- makeDataCache()
+  data_file <- 'outcome-of-care-measures.csv'
+}
 
 ## This is the main function
 best <- function(state, outcome) {
@@ -16,32 +20,27 @@ best <- function(state, outcome) {
   # so read.csv chokes on coercing to numeric
   #lst  <- list('character'=c(2,7), 'numeric'=c(11,17,23))
   # can still limit data read in, but it will all be chars
-  lst  <- list('character'=c(2,7,11,17,23))
-  colc <- gen_outcome_classes(lst)
-  outcome_data <- read.csv('outcome-of-care-measures.csv', colClasses=colc, nrows=4706)
-  names(outcome_data) <- c('Hospital.Name','State',"heart attack", "heart failure","pneumonia")
-
+  #var_list  <- list('character'=c(2,7,11,17,23))
+  #name_list <- c("Hospital.Name", "State", "heart attack", "heart failure", "pneumonia")
+  #outcome_data <- cacheOutcomes(data_cache, data_file, var_list, name_list)
+  outcome_data <- cacheOutcomes(data_cache)
+  
   ## Check that state and outcome are valid
   # Note: outcome_data includes District of Columbia (DC), Guam (GU),
   #  Puerto Rico (PR), and the Virgin Islands (VI)
-  states <- unique(outcome_data$State)
-  conds <- names(outcome_data)[3:5]
+  # Note: states, the master list of valid states, is cached by casheOutcomeData
   
   if(!(state %in% states)) {
     stop('invalid state')
-  } else if(!(outcome %in% conds)) {
+  } else if(!(outcome %in% conditons)) {
     stop('invalid outcome')
   } else {
-    ## Split the outcome_data into states, keeping only the state of interest
-    ## as a simple data frame
-    state_data <- split(outcome_data, outcome_data$State)[[state]]
-    ## Coerce outcome_data to be numeric and suppress NA warning
-    state_data[outcome] <- 
-      suppressWarnings(sapply(state_data[outcome], as.numeric))
+    ## get the data for the state of interest
+    state_data <- outcome_data[[state]]
+
     ## Get the hospital name(s) in that state with lowest 30-day death rate
     lowest_rate <- min(state_data[outcome], na.rm=T)
-    best_hospital <- subset(state_data, 
-                            state_data[outcome]==lowest_rate)$Hospital.Name
+    best_hospital <- state_data[which(state_data[outcome]==lowest_rate),]$Hospital.Name
     ## Return the first (alphabetically) hospital name
     if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
     best_hospital
