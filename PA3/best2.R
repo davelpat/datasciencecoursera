@@ -14,7 +14,7 @@ if(!exists("makeDataCache")) {
 }
 
 ## This is the main function
-best <- function(state, outcome) {
+best <- function(state, outcome, lowest=TRUE) {
   ## Read only the needed outcome data
   # well, bummer. the data is all quoted strings,
   # so read.csv chokes on coercing to numeric
@@ -39,7 +39,12 @@ best <- function(state, outcome) {
     state_data <- outcome_data[[state]]
 
     ## Get the hospital name(s) in that state with lowest 30-day death rate
-    lowest_rate <- min(state_data[outcome], na.rm=T)
+    if(lowest == TRUE) {
+      lowest_rate <- min(state_data[outcome], na.rm=T)
+    } else {
+      lowest_rate <- max(state_data[outcome], na.rm=T)
+    }
+    
     best_hospital <- state_data[which(state_data[outcome]==lowest_rate),]$Hospital.Name
     ## Return the first (alphabetically) hospital name
     if(length(best_hospital) > 1) best_hospital <- sort(best_hospital)[1]
