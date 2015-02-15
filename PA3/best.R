@@ -28,10 +28,6 @@ gen_outcome_classes <- function(non_null, len=46) {
 ## This is the main function
 best <- function(state, outcome) {
   ## Read only the needed outcome data
-  # well, bummer. the data is all quoted strings,
-  # so read.csv chokes on coercing to numeric
-  #lst  <- list('character'=c(2,7), 'numeric'=c(11,17,23))
-  # can still limit data read in, but it will all be chars
   lst  <- list('character'=c(2,7,11,17,23))
   colc <- gen_outcome_classes(lst)
   data <- read.csv('outcome-of-care-measures.csv', colClasses=colc, nrows=4706)
