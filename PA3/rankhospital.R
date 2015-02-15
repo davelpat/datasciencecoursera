@@ -22,25 +22,21 @@ rankhospital <- function(state, outcome, rank=1) {
   outcome_data <- cacheOutcomes(data_cache)
   
   if(valid_args(state, outcome)) {
-    ## get the data for the state of interest
-    state_data <- outcome_data[[state]]
-
-    ## Get the list of ratings for that outcome for that state
-    ratings <- get_ratings(state_data[outcome])
+    ## Get the list of hospitals ordered by morbidity rate
+    ## for that outcome for the state
+    ranked_hospitals <- sort_by_morbidity(outcome_data[[state]], outcome)
     
     ## map "best" and "worst" ranks to the ratings
     if(rank == "best") {
       rank = 1
     } else if(rank == "worst") {
-      rank = length(ratings)
+      rank = length(ranked_hospitals)
     }
     
     ## validate rank is within range
-    if(rank %in% seq_along(ratings)) {
-      ## Get the hospital name(s) in that state with the mortaility rate rank
-      hospital <- state_data[which(state_data[outcome]==ratings[rank]),]$Hospital.Name
-      ## Return the first (alphabetically) hospital name
-      if(length(hospital) > 1) hospital <- sort(hospital)[1]
+    if(rank %in% seq_along(ranked_hospitals)) {
+      ## Get the hospital name in that state with the requested mortaility rate rank
+      hospital <- ranked_hospitals[rank]
     } else {
       hospital <- NA
     }

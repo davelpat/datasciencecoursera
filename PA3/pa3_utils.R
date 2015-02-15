@@ -5,6 +5,7 @@
 ## Optional "len" parameter sets the length of the vector.
 ## Default len = 46
 ## returns a colClasses character vector
+
 gen_outcome_classes <- function(non_null, len=46) {
   # generate the list of nulls as wide as the outcomes table
   classes <- rep("NULL", len)
@@ -31,10 +32,18 @@ valid_args <- function (state, outcome) {
   TRUE
 }
 
-## get_ratings takes a data frame column of one state's outcomes for one condition
-## and returns the morbidity rates in an ordered numeric vector, from best to worst
-get_ratings <- function (state_outcomes) {
-  sort(na.omit(unique(as.vector(state_outcomes[,1], "numeric"))))
+## takes a data frame, split by state, of hospital name,state, and 3 conditions
+## returns a character vector of hospital names, ranked by morbidity rate for that condition
+sort_by_morbidity <- function (outcome_data, outcome) {
+  # remove NAs
+  #rated_hospitals <- na.omit(outcome_data[[1]][,c("Hospital.Name",outcome)])
+  rated_hospitals <- na.omit(outcome_data[,c("Hospital.Name",outcome)])
+  
+  # rank by 2 level sort: outcome first, then hospital name
+  ranks <- order(rated_hospitals[,outcome],rated_hospitals[,"Hospital.Name"])
+
+  # return a char vector of sorted hospital names, ranked by morbidity rates
+  rated_hospitals[ranks,"Hospital.Name"]
 }
 
 ## this function creates a DataCache and the functions that store and
@@ -93,8 +102,8 @@ cacheOutcomes <- function(data_cache,
     
     # and cache it
     data_cache$set(cached_data)
-  } else {
-    message("getting cached data")
+#  } else {
+#    message("getting cached data")
   }
   ## Return the outcome_data for the data_file
   cached_data
