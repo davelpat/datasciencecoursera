@@ -16,13 +16,6 @@ if(!exists("makeDataCache")) {
 ## This is the main function
 best <- function(state, outcome, lowest=TRUE) {
   ## Read only the needed outcome data
-  # well, bummer. the data is all quoted strings,
-  # so read.csv chokes on coercing to numeric
-  #lst  <- list('character'=c(2,7), 'numeric'=c(11,17,23))
-  # can still limit data read in, but it will all be chars
-  #var_list  <- list('character'=c(2,7,11,17,23))
-  #name_list <- c("Hospital.Name", "State", "heart attack", "heart failure", "pneumonia")
-  #outcome_data <- cacheOutcomes(data_cache, data_file, var_list, name_list)
   outcome_data <- cacheOutcomes(data_cache)
   
   ## Check that state and outcome are valid
