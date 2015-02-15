@@ -1,15 +1,14 @@
 ## The "rankhospital" function reads the outcome-of-care-measures.csv file
 ## and returns the name of the hospital that has the specified ranking for
-## the specified state. In the event of a tie for best, the first alphabetically
-## named hospital will be returned.
+## the specified state.
 ## The function takes three arguments: 
 ##    the 2-character abbreviated name of a state (state)
 ##    an outcome (outcome)
-##    the ranking of a hospital in that state for that outcome (num)
+##    the ranking of a hospital in that state for that outcome (rank)
 ## The outcomes can be one of "heart attack", "heart failure",
 ## or "pneumonia".
 
-## Load supporting functions
+## Load supporting functions, if needed
 if(!exists("makeDataCache")) {
   source('~/GitHub/datasciencecoursera/R-programming/PA1/PA3/pa3_utils.R')
   data_cache <- makeDataCache()

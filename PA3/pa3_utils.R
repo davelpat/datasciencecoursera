@@ -36,7 +36,6 @@ valid_args <- function (state, outcome) {
 ## returns a character vector of hospital names, ranked by morbidity rate for that condition
 sort_by_morbidity <- function (outcome_data, outcome) {
   # remove NAs
-  #rated_hospitals <- na.omit(outcome_data[[1]][,c("Hospital.Name",outcome)])
   rated_hospitals <- na.omit(outcome_data[,c("Hospital.Name",outcome)])
   
   # rank by 2 level sort: outcome first, then hospital name
