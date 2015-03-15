@@ -34,6 +34,7 @@ rm(tmp_df)
 
 # Create the first data set (steps 1 - 4)
 # data join: cbind subject, y, x; rbind test, train
+# give variables mnemonic names
 combined_data <- tbl_df(
   rbind(
     cbind(
@@ -45,8 +46,10 @@ combined_data <- tbl_df(
       read.table(activity_train_file, col.names = "Activity"),
       read.table(data_train_file, col.names = data_labels))))
 
-# select subject, activity, mean, sd
+# select subject, activity, mean, std
+# first two variables are the subject and activity
+std_mean_data <- select(combined_data, 1:2, contains("mean", ignore.case = FALSE), contains("std"))
+
 # map the activities
-# give variables mnemonic names
 
 # Create second data set
