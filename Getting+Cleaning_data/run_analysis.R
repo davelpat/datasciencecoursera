@@ -51,5 +51,6 @@ combined_data <- tbl_df(
 std_mean_data <- select(combined_data, 1:2, contains("mean", ignore.case = FALSE), contains("std"))
 
 # map the activities
+std_mean_data <- mutate(std_mean_data, Activity = activity_labels[Activity])
 
 # Create second data set
