@@ -34,7 +34,6 @@ rm(tmp_df)
 
 # Create the first data set (steps 1 - 4)
 # data join: cbind subject, y, x; rbind test, train
-# give variables mnemonic names
 combined_data <- tbl_df(
   rbind(
     cbind(
@@ -48,9 +47,23 @@ combined_data <- tbl_df(
 
 # select subject, activity, mean, std
 # first two variables are the subject and activity
+# Note that there are 7 variable names that appear to be the formula for calculating angles
+#   and have "Mean" in the formula, but these are not mean variables. We are only interested in 
+#   variables that are means and these are all lower cased
 std_mean_data <- select(combined_data, 1:2, contains("mean", ignore.case = FALSE), contains("std"))
 
+# give variables mnemonic names
+# Make the names from the original data set syntactically correct
+new_names <- make.names(names(std_mean_data))
+# Remove trailing periods ('.') left from removing parens from the names
+new_names <- unlist(lapply(new_names, sub, pattern="[.]+$", replacement=""))
+# Remove extra periods ('.') in the midst of the names left from removing parens from within the names
+new_names <- unlist(lapply(new_names, gsub, pattern="[.]+", replacement="."))
+# And apply them to the new data set
+names(std_mean_data) <- new_names
+
 # map the activities
+# Use the activity code to look up the activity name in the list they provide
 std_mean_data <- mutate(std_mean_data, Activity = activity_labels[Activity])
 
 # Create second data set
