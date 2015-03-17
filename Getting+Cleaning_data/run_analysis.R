@@ -53,13 +53,15 @@ combined_data <- tbl_df(
 std_mean_data <- select(combined_data, 1:2, contains("mean", ignore.case = FALSE), contains("std"))
 
 # give variables mnemonic names
-# Make the names from the original data set syntactically correct
-new_names <- make.names(names(std_mean_data))
-# Remove trailing periods ('.') left from removing parens from the names
-new_names <- unlist(lapply(new_names, sub, pattern="[.]+$", replacement=""))
-# Remove extra periods ('.') in the midst of the names left from removing parens from within the names
-new_names <- unlist(lapply(new_names, gsub, pattern="[.]+", replacement="."))
-# And apply them to the new data set
+# Get the syntactically correct names from the original data set, then
+#  Remove the extra periods ('.') in the midst of the names and the trailing
+#  periods left from read.table making the names syntactically correct
+#  Fianlly, convert list to vector
+new_names <- names(std_mean_data) %>%
+  lapply(sub, pattern="[.]+$", replacement="") %>%
+  lapply(gsub, pattern="[.]+", replacement=".") %>%
+  unlist
+# Rename the variables in the target data set with the new names
 names(std_mean_data) <- new_names
 
 # map the activities
