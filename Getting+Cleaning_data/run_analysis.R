@@ -8,12 +8,12 @@
 #    with the average of each variable for each activity and each subject.
 
 # load required libraries
-library("dplyr", lib.loc="~/R/win-library/3.1")
+library("dplyr")
 
 # load the data
+# First, where is it
 setwd("~/GitHub/datasciencecoursera/data_science_repo/Getting+Cleaning_data")
 
-# First, where is it
 subject_test_file   <- "./UCI_HAR_Dataset/test/subject_test.txt"
 activity_test_file  <- "./UCI_HAR_Dataset/test/y_test.txt"
 data_test_file      <- "./UCI_HAR_Dataset/test/X_test.txt"
@@ -30,6 +30,8 @@ activity_labels <- tmp_df$label
 
 tmp_df <- read.table(data_labels_file, col.names = c("id", "label"), colClasses = c("integer", "character"))
 data_labels     <- tmp_df$label
+
+# Clean up as we proceed
 rm(tmp_df)
 
 # Create the first data set (steps 1 - 4)
@@ -46,17 +48,19 @@ combined_data <- tbl_df(
       read.table(data_train_file, col.names = data_labels))))
 
 # select subject, activity, mean, std
-# first two variables are the subject and activity
 # Note that there are 7 variable names that appear to be the formula for calculating angles
 #   and have "Mean" in the formula, but these are not mean variables. We are only interested in 
-#   variables that are means and these are all lower cased
-std_mean_data <- select(combined_data, 1:2, contains("mean", ignore.case = FALSE), contains("std"))
+#   variables that are means (and standard deviations) and these are all lower cased
+std_mean_data <- select(combined_data, Subject, Activity, contains("mean", ignore.case = FALSE), contains("std"))
+
+# Clean up as we proceed
+rm(combined_data)
 
 # give variables mnemonic names
-# Get the syntactically correct names from the original data set, then
-#  Remove the extra periods ('.') in the midst of the names and the trailing
-#  periods left from read.table making the names syntactically correct
-#  Fianlly, convert list to vector
+# Get the syntactically correct variable names from the original data set, then
+#  Remove the trailing periods ('.') and the extra periods in the midst of the names
+#  left over from read.table making the names syntactically correct
+#  Finally, convert the list to a vector
 new_names <- names(std_mean_data) %>%
   lapply(sub, pattern="[.]+$", replacement="") %>%
   lapply(gsub, pattern="[.]+", replacement=".") %>%
@@ -68,4 +72,9 @@ names(std_mean_data) <- new_names
 # Use the activity code to look up the activity name in the list they provide
 std_mean_data <- mutate(std_mean_data, Activity = activity_labels[Activity])
 
-# Create second data set
+# Now, create second data set
+# First, group the means and standard deviation data subset
+# Then summarize the mean of the groups across each variable
+ave_std_mean_data <- std_mean_data %>%
+  group_by(Subject, Activity) %>%
+  summarise_each(funs(mean))
