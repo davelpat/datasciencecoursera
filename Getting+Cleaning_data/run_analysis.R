@@ -12,11 +12,13 @@ library("dplyr")
 
 # load the data
 # First, where is it
-setwd("~/GitHub/datasciencecoursera/data_science_repo/Getting+Cleaning_data")
 
 # Does the data directory exist?
-data_dir <- file.path(".", "UCI_HAR_Dataset")
-if(!file.exists(data_dir))(
+# data_dir <- file.path("~", "GitHub", "datasciencecoursera", "data_science_repo", "Getting+Cleaning_data", "UCI_HAR_Dataset")
+data_dir <- file.path(".")
+if(file.exists(data_dir))(
+  setwd(data_dir)
+) else (
   stop("Cannot find expected data directory: ", data_dir))
 
 # Generate platform specific file names
