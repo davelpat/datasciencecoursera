@@ -7,32 +7,37 @@
 # 5. From the data set in step 4, creates a second, independent tidy data set
 #    with the average of each variable for each activity and each subject.
 
-# load required libraries
+# load desired library
 library("dplyr")
 
 # load the data
 # First, where is it
 setwd("~/GitHub/datasciencecoursera/data_science_repo/Getting+Cleaning_data")
 
-subject_test_file   <- "./UCI_HAR_Dataset/test/subject_test.txt"
-activity_test_file  <- "./UCI_HAR_Dataset/test/y_test.txt"
-data_test_file      <- "./UCI_HAR_Dataset/test/X_test.txt"
-subject_train_file  <- "./UCI_HAR_Dataset/train/subject_train.txt"
-activity_train_file <- "./UCI_HAR_Dataset/train/y_train.txt"
-data_train_file     <- "./UCI_HAR_Dataset/train/X_train.txt"
+# Does the data directory exist?
+data_dir <- file.path(".", "UCI_HAR_Dataset")
+if(!file.exists(data_dir))(
+  stop("Cannot find expected data directory: ", data_dir))
 
-activity_labels_file <- "./UCI_HAR_Dataset/activity_labels.txt"
-data_labels_file     <- "./UCI_HAR_Dataset/features.txt"
+# Generate platform specific file names
+subject_test_file   <- file.path(data_dir, "test",  "subject_test.txt")
+activity_test_file  <- file.path(data_dir, "test",  "y_test.txt")
+data_test_file      <- file.path(data_dir, "test",  "X_test.txt")
+subject_train_file  <- file.path(data_dir, "train", "subject_train.txt")
+activity_train_file <- file.path(data_dir, "train", "y_train.txt")
+data_train_file     <- file.path(data_dir, "train", "X_train.txt")
 
-# Read in the labels
-tmp_df <- read.table(activity_labels_file, col.names = c("id", "label"), colClasses = c("integer", "character"))
-activity_labels <- tmp_df$label
+activity_labels_file <- file.path(data_dir, "activity_labels.txt")
+data_labels_file     <- file.path(data_dir, "features.txt")
 
-tmp_df <- read.table(data_labels_file, col.names = c("id", "label"), colClasses = c("integer", "character"))
-data_labels     <- tmp_df$label
+# Read in the data labels
+data_labels_df <- read.table(data_labels_file, 
+                             col.names = c("id", "label"), 
+                             colClasses = c("integer", "character"))
+data_labels     <- data_labels_df$label
 
 # Clean up as we proceed
-rm(tmp_df)
+rm(data_labels_df)
 
 # Create the first data set (steps 1 - 4)
 # data join: cbind subject, y, x; rbind test, train
@@ -48,10 +53,12 @@ combined_data <- tbl_df(
       read.table(data_train_file, col.names = data_labels))))
 
 # select subject, activity, mean, std
-# Note that there are 7 variable names that appear to be the formula for calculating angles
+# Note 1: Use matches to select the variables so the means and stds for each measure are together
+# Note 2: There are 7 variable names that appear to be the formula for calculating angles
 #   and have "Mean" in the formula, but these are not mean variables. We are only interested in 
 #   variables that are means (and standard deviations) and these are all lower cased
-std_mean_data <- select(combined_data, Subject, Activity, contains("mean", ignore.case = FALSE), contains("std"))
+std_mean_data <- select(combined_data, Subject, Activity, 
+                        matches("(mean|std)", ignore.case = FALSE))
 
 # Clean up as we proceed
 rm(combined_data)
@@ -69,12 +76,29 @@ new_names <- names(std_mean_data) %>%
 names(std_mean_data) <- new_names
 
 # map the activities
+# Read in the labels
+activity_df <- read.table(activity_labels_file, 
+                          col.names = c("id", "label"), 
+                          colClasses = c("integer", "character"))
 # Use the activity code to look up the activity name in the list they provide
-std_mean_data <- mutate(std_mean_data, Activity = activity_labels[Activity])
+std_mean_data <- mutate(std_mean_data, Activity = activity_df$label[Activity])
 
 # Now, create second data set
 # First, group the means and standard deviation data subset
 # Then summarize the mean of the groups across each variable
-ave_std_mean_data <- std_mean_data %>%
+mean_std_mean_data <- std_mean_data %>%
   group_by(Subject, Activity) %>%
   summarise_each(funs(mean))
+
+# Clean up as we proceed
+rm(std_mean_data)
+
+# Rename the variables to reflect that they are now means
+mean_names <- c("Subject", "Activity",
+               names(mean_std_mean_data[3:81]) %>%
+                 lapply(sub, pattern="^", replacement="mean.") %>%
+                 unlist)
+names(mean_std_mean_data) <- mean_names
+
+# Write the tidy data set
+write.table(mean_std_mean_data, file = "mean_std_mean_data.txt", row.name=FALSE)
