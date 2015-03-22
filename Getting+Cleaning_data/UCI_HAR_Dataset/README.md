@@ -1,9 +1,11 @@
-==================================================================
-Course Project for John Hopkins Data Science Specialization
-Getting and Cleaning Data module getdata-012
-March 2015
-==================================================================
+# Read Me
+## Course Project for John Hopkins Data Science Specialization
+### Getting and Cleaning Data module getdata-012
+### March 2015
+
 This README consists of two parts: Part I describes the data used and its processing; Part II is the README for the raw data.
+
+## Part I
 
 The raw data used for this project represent data collected from the accelerometers from the Samsung Galaxy S smartphone. A full description is available at the site where the data was obtained: 
 
@@ -13,14 +15,13 @@ The raw data for this project was downloaded from:
 
 https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip 
 
-Project description
-=========================================
+### Project description
+
 The project is to combine the raw (from this project's perspective) test and training data for all subject, then summarize any raw mean or standard deviation variable by finding the mean across subject and activity. There are 30 subjects and 6 activities. 46 mean variables and 33 standard deviation variables were extracted from the raw data set. Note that there are 7 variables that calculate angles and use the word "Mean" in their name, but these are not mean variables and are not included in the summary data. 
 
 The raw data was downloaded and extracted to the directory where the analysis script (run_analysis.R) is. The script combines the subject id, activity code, and data files for both the training and test data into a single data frame. All mean and standard deviation (std) variables are extracted into a working subset and the activity codes are replaced by the activity name. This produces a subset of 10299 observations of 81 variables (Subject, Activity, and 79 measurement summaries, i.e. means and stds). This working subset is then summarized by taking the mean of each variable for each subject and activity, which yields a tidy data set of 180 observations (30 subjects times 6 activities) of the mean of each of the 79 variables extracted from the raw data set.
 
-The project produces the following files:
-=========================================
+### The project produces the following files:
 
 - 'README.txt': includes and extends the original README.txt from the raw data
 - 'mean_std_mean_data.txt': the summary data set from the combined test and train data
@@ -28,8 +29,7 @@ The project produces the following files:
 - 'summarized_features_info.txt': Shows information about the summary variables
 - 'summarized_features.txt': lists all the 'mean_std_mean_data.txt' variables and maps them to the raw data variables they summarize
 
-This project uses the following files from the raw data:
-=========================================
+### This project uses the following files from the raw data:
 
 - 'README.txt'
 - 'features_info.txt': Shows information about the variables used on the feature vector.
@@ -42,13 +42,13 @@ This project uses the following files from the raw data:
 - 'test/y_test.txt': Test labels.
 - 'test/subject_train.txt': Each row identifies the subject who performed the activity for each window sample. Its range is from 1 to 30. 
 
-Here are the software versions used for this project:
-=========================================
-	operating system Windows 8
-	R version 3.1.2
-	RStudio version 0.98.1102
-	dplyr version 0.4.1
-	git version 1.9.2.msysgit.0
+### Here are the software versions used for this project:
+
+- operating system Windows 8
+- R version 3.1.2
+- RStudio version 0.98.1102
+- dplyr version 0.4.1
+- git version 1.9.2.msysgit.0
 
 =========================================
 Original README.txt from the raw data set
