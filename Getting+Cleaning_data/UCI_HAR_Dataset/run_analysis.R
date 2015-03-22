@@ -13,24 +13,22 @@ library("dplyr")
 # load the data
 # First, where is it
 
-# Does the data directory exist?
-# data_dir <- file.path("~", "GitHub", "datasciencecoursera", "data_science_repo", "Getting+Cleaning_data", "UCI_HAR_Dataset")
-data_dir <- file.path(".")
-if(file.exists(data_dir))(
-  setwd(data_dir)
-) else (
-  stop("Cannot find expected data directory: ", data_dir))
+# Do the data directories exist?
+# what is the name of the directory we're running in
+this_dir <- getwd()
+if( ! (file.exists("test") & file.exists("train")))(
+  stop("Cannot find expected data directories for test and train in ", this_dir))
 
 # Generate platform specific file names
-subject_test_file   <- file.path(data_dir, "test",  "subject_test.txt")
-activity_test_file  <- file.path(data_dir, "test",  "y_test.txt")
-data_test_file      <- file.path(data_dir, "test",  "X_test.txt")
-subject_train_file  <- file.path(data_dir, "train", "subject_train.txt")
-activity_train_file <- file.path(data_dir, "train", "y_train.txt")
-data_train_file     <- file.path(data_dir, "train", "X_train.txt")
+subject_test_file   <- file.path(this_dir, "test",  "subject_test.txt")
+activity_test_file  <- file.path(this_dir, "test",  "y_test.txt")
+data_test_file      <- file.path(this_dir, "test",  "X_test.txt")
+subject_train_file  <- file.path(this_dir, "train", "subject_train.txt")
+activity_train_file <- file.path(this_dir, "train", "y_train.txt")
+data_train_file     <- file.path(this_dir, "train", "X_train.txt")
 
-activity_labels_file <- file.path(data_dir, "activity_labels.txt")
-data_labels_file     <- file.path(data_dir, "features.txt")
+activity_labels_file <- file.path(this_dir, "activity_labels.txt")
+data_labels_file     <- file.path(this_dir, "features.txt")
 
 # Read in the data labels
 data_labels_df <- read.table(data_labels_file, 
