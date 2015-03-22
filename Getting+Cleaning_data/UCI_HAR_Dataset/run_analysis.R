@@ -84,16 +84,17 @@ activity_df <- read.table(activity_labels_file,
 std_mean_data <- mutate(std_mean_data, Activity = activity_df$label[Activity])
 
 # Now, create second data set
-# First, group the means and standard deviation data subset
+# First, group the means and standard deviation data subset by Subject and Activity
 # Then summarize the mean of the groups across each variable
 mean_std_mean_data <- std_mean_data %>%
   group_by(Subject, Activity) %>%
   summarise_each(funs(mean))
 
 # Clean up as we proceed
-rm(std_mean_data)
+rm(std_mean_data, activity_df)
 
 # Rename the variables to reflect that they are now means
+# by prepending 'mean.' to the old std_mean_data data set names
 mean_names <- c("Subject", "Activity",
                names(mean_std_mean_data[3:81]) %>%
                  lapply(sub, pattern="^", replacement="mean.") %>%
