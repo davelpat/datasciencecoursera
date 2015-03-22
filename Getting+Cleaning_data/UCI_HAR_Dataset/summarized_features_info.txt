@@ -1,0 +1,24 @@
+Summary Feature Selection
+=========================
+
+The variables from the UCI HAR data set selected for summary include all variables in the data set that have already summarized the raw instrument measurements and identified as mean, std (standard deviation) or meanFreq. The base variables include:
+
+tBodyAcc
+tGravityAcc
+tBodyAccJerk
+tBodyGyro
+tBodyGyroJerk
+tBodyAccMag
+tGravityAccMag
+tBodyAccJerkMag
+tBodyGyroMag
+tBodyGyroJerkMag
+fBodyAcc
+fBodyAccJerk
+fBodyGyro
+fBodyAccMag
+fBodyBodyAccJerkMag
+fBodyBodyGyroMag
+fBodyBodyGyroJerkMag
+
+These base variables, summarized and taken along X, Y, and Z directions, expand to the 79 variables in the project data set. See summarized_features.tst for the full list of summary variables and how they map to the raw data variables. See features_info.txt for more details on the raw data variables.
