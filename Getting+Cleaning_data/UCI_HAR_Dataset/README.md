@@ -1,9 +1,9 @@
 # Read Me
-## Course Project for John Hopkins Data Science Specialization
-### Getting and Cleaning Data module getdata-012
-### March 2015
+## John Hopkins Data Science Specialization
+### Course Project for Getting and Cleaning Data module getdata-012
+#### March 2015
 
-This README consists of two parts: Part I describes the data used and its processing; Part II is the README for the raw data.
+This README consists of two parts: **Part I** describes the data used and its processing; **Part II** is the README for the raw data.
 
 ## Part I
 
