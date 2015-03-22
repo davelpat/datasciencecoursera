@@ -21,4 +21,15 @@ fBodyBodyAccJerkMag
 fBodyBodyGyroMag
 fBodyBodyGyroJerkMag
 
-These base variables, summarized and taken along X, Y, and Z directions, expand to the 79 variables in the project data set. See summarized_features.tst for the full list of summary variables and how they map to the raw data variables. See features_info.txt for more details on the raw data variables.
+These base variables, summarized and taken along X, Y, and Z directions, expand to the 79 variables in the project data set. The summary variables are named according to this pattern:
+
+	mean.<raw base variable name>.<measure><.axial direction>
+
+where:
+
+	mean is the summary operation preformed on the raw data variables
+	<raw base variable name> is one of the base variables from the list above
+	<measure> is one of mean, std or meanFreq
+	<.axial direction> is one of .X, .Y, or .Z, if the raw data variable had an axial direction
+
+See summarized_features.txt for the full list of summary variables and how they map to the raw data variables. See features_info.txt for more details on the raw data variables.
