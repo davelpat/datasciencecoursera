@@ -1,0 +1,41 @@
+---
+title: "Storm Data Analysis"
+author: "Dave Patterson"
+date: "September 13, 2015"
+output: html_document
+---
+
+```{r load libs}
+packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2")
+sapply(packages, require, character.only = TRUE, quietly = TRUE)
+```
+
+```{r get files}
+original_data  <- "http://www.ncdc.noaa.gov/stormevents/details.jsp"
+storm_data_url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+storm_data_doc <- "http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"
+storm_data_faq <- "http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf"
+storm_data_bz2 <- "StormData.csv.bz2"
+storm_data_events_file <- "StormDataEventTable.csv"
+
+# if the data file is not already present, get the source data file
+if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = storm_data_bz2)}
+```
+
+```{r read data}
+```
+
+```{r analyze event types}
+# explore the data
+```
+
+```{r clean events}
+# look for outliers that may distort the results; correct or exclude
+```
+
+```{r health impact}
+```
+
+```{r financial impact}
+```
+
