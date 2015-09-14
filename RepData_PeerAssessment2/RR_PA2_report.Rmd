@@ -136,6 +136,15 @@ replace_event <- function(src, pattern, replacement) {
                    src[idx, "EVTYPE"] <- replacement
                    src}
 
+# define a function to replace the dirty event types with standard names while
+# excluding a specific phrase or word
+# NOTE that argument order is set to allow pipelining
+replace_event_wo <- function(src, pattern, exclude, replacement) {
+                   idx <- grepl(pattern, src$EVTYPE, ignore.case = TRUE) &
+                          !grepl(exclude, src$EVTYPE, ignore.case = TRUE)
+                   src[idx, "EVTYPE"] <- replacement
+                   src}
+
 ```
 
 Using these functions we can map the storm data events into standard events.
@@ -151,8 +160,19 @@ sd2 <- select(storm_data, c(1:8,10)) %>%
                 "Cold/Wind Chill") %>%
   replace_event("^(land|mud|rock).*(slide|slump)", 
                 "Debris Flow") %>%
+  replace_event_wo("fog", 
+                   "freezing", 
+                   "Dense Fog") %>%
+  replace_event_wo("dust", 
+                   "devil", 
+                   "Dust Storm") %>%
+  replace_event("dust devil", 
+                "Dust Devil") %>%
+  replace_event("^(heat wave|(excessive|record) heat)", 
+                "Excessive Heat") %>%
   replace_event("^\\s*(tstm|thunder).*", 
-                "Thunderstorm Wind")
+                "Thunderstorm Wind") %>%
+  mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))
 ```
 
 ```{r health impact}
