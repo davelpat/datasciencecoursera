@@ -8,9 +8,10 @@ output:
 ---
 
 ## Synopsis
-The purpose of this report is to explore the NOAA Storm Database and analyze which types of storm events 
-1) are most harmful with respect to population health and 
-2) which types of events have the greatest economic consequences?
+The purpose of this report is to explore the NOAA Storm Database and analyze the types of 
+storm events to understand  
+1. which are most harmful with respect to population health and  
+2. which have the greatest economic consequences?  
 This analysis should help to prioritize resources to prepare for severe weather events.
 
 ## Data Processing
@@ -55,7 +56,12 @@ header_char_classes[c(2,8,23:28,36:37)] <- "character"
 cbind(storm_data_headers, header_char_classes)
 ```
 
-Prior to 1996, there was no standard classification of storm types. Effective beginnning in 1996, storm events were grouped into 48 standard event types. Prior to that, the storm data was both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996 in comparison to today was significantly great enough to potentially skew the data. For these reasons, we will only work with the last 15 years of the dataset. This still leaves about two thirds of the storm events in the dataset.
+Prior to 1996, there was no standard classification of storm types. Effective beginnning in 1996, 
+storm events were grouped into 48 standard event types. Prior to that, the storm data was 
+both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996
+in comparison to today was significantly great enough to potentially skew the data. 
+For these reasons, we will only work with the last 15 years of the dataset. 
+This still leaves about two thirds of the storm events in the dataset.
 
 ```{r read data, cache=TRUE}
 # read in only the variables we're interested in and only the data after the new stardard has gone into effect
@@ -67,7 +73,12 @@ storm_data <- tbl_df(read.csv(storm_data_bz2,
               filter(BGN_DATE >= "1996-01-01")
 ```
 
-This still leaves us with nearly two thirds of a million storm events, many of which have no impact on the questions we are looking to answer. The following code block corrects the data types and filters out storm events that were reported to have no financial or health impact. This eliminates more than two thirds of the storm events in the 15 year period, but still leaves a bit over 200,000 storm events, all of which have a bearing on our two questions.
+This still leaves us with nearly two thirds of a million storm events, many of which 
+have no impact on the questions we are looking to answer. The following code block 
+corrects the data types and filters out storm events that were reported to have 
+no financial or health impact. This eliminates more than two thirds of the storm events 
+in the 15 year period, but still leaves a bit over 200,000 storm events, 
+all of which have a bearing on our two questions.
 
 ```{r filter data, cache=TRUE}
 # coerce the numeric data to be the correct type
@@ -84,7 +95,22 @@ storm_data <- storm_data %>%
               filter(FATALITIES > 0 | INJURIES > 0 | PROPDMG > 0 | CROPDMG > 0)
 ```
 
-```{r analyze event types}
+In a first look at the storm data, we can see the storm event types do not always align 
+with the standard event names.
+
+```{r event names}
+# read in the standard event types used starting 1996
+# extracted from storm_data_doc file (Table 1. Storm Data Event Table)
+standard_events <- read.csv(storm_data_events_file, comment.char = "#", stringsAsFactors = FALSE)
+
+# and from our storm data
+storm_data_events <- unique(storm_data$EVTYPE)
+```
+
+The storm data contains `r length(storm_data_events)` unique storm event types in contrast 
+to the `r length(standard_events$Event.Name)` standard event types.
+
+```{r useful functions}
 # explore the data
 ```
 
