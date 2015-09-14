@@ -128,10 +128,31 @@ get_event <- function(src, pattern) {
 get_remarks_for <- function(ref) {
   storm_data[(storm_data$REFNUM == ref),"REMARKS"]
 }
+
+# define a function to replace the dirty event types with standard names
+# NOTE that argument order is set to allow pipelining
+replace_event <- function(src, pattern, replacement) {
+                   idx <- grepl(pattern, src$EVTYPE, ignore.case = TRUE)
+                   src[idx, "EVTYPE"] <- replacement
+                   src}
+
 ```
 
-```{r clean events}
-# look for outliers that may distort the results; correct or exclude
+Using these functions we can map the storm data events into standard events.
+
+```{r map events}
+# Use regular expressions to map the dirty event type fields into standard names
+sd2 <- select(storm_data, c(1:8,10)) %>% 
+  replace_event("^Astronomical Low Tide", 
+                "Astronomical Low Tide") %>%
+  replace_event("(coast|cstl|beach).*(flood|erosion)", 
+                "Coastal Flood") %>%
+  replace_event("^(extended )*cold", 
+                "Cold/Wind Chill") %>%
+  replace_event("^(land|mud|rock).*(slide|slump)", 
+                "Debris Flow") %>%
+  replace_event("^\\s*(tstm|thunder).*", 
+                "Thunderstorm Wind")
 ```
 
 ```{r health impact}
