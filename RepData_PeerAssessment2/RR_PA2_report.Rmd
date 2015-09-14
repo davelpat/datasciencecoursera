@@ -107,11 +107,27 @@ standard_events <- read.csv(storm_data_events_file, comment.char = "#", stringsA
 storm_data_events <- unique(storm_data$EVTYPE)
 ```
 
-The storm data contains `r length(storm_data_events)` unique storm event types in contrast 
-to the `r length(standard_events$Event.Name)` standard event types.
+The storm data contains **`r length(storm_data_events)`** unique storm event types in contrast 
+to the `r length(standard_events$Event.Name)` standard event types. It would greatly simplfy the
+analysis if the `r length(storm_data_events)` unique storm event types could be grouped into the
+`r length(standard_events$Event.Name)` standard event types. Since we're dealing with 
+`r length(storm_data$EVTYPE)` storm events, it is obvious that we'll need some tools to help with 
+the analysis. These functions were useful in exploring the storm data.
 
 ```{r useful functions}
-# explore the data
+# define a function to aid in generating regexps to group events into std types
+get_event <- function(src, pattern) {
+               unique(grep(pattern, 
+                           src, 
+                           ignore.case = TRUE, 
+                           value = TRUE))}
+# and an example call
+# get_event(events, "^\\s*(tstm|thunder)")
+
+# define a function to get the remarks for a specific storm reference
+get_remarks_for <- function(ref) {
+  storm_data[(storm_data$REFNUM == ref),"REMARKS"]
+}
 ```
 
 ```{r clean events}
