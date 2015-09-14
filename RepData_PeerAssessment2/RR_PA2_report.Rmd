@@ -2,8 +2,22 @@
 title: "Storm Data Analysis"
 author: "Dave Patterson"
 date: "September 13, 2015"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
 ---
+
+## Synopsis
+The purpose of this report is to explore the NOAA Storm Database and analyze which types of storm events 
+1) are most harmful with respect to population health and 
+2) which types of events have the greatest economic consequences?
+This analysis should help to prioritize resources to prepare for severe weather events.
+
+## Data Processing
+
+The following code blocks loads the required packages, downloads a copy of the 
+U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database from the 
+course repository for all the storms in the U.S. from 1950 through 2011.
 
 ```{r load libs}
 packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2")
@@ -20,6 +34,24 @@ storm_data_events_file <- "StormDataEventTable.csv"
 
 # if the data file is not already present, get the source data file
 if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = storm_data_bz2)}
+```
+
+Next, we read in the data and prepare it for analysis. Given the large volume of data 
+(over 900,000 storm events), we only read in the data needed to answer the two questions 
+of interest to speed up the processing of the data. In the list below, "NULL" indicates 
+that data field is ignored in this analysis.
+
+```{r get headers}
+# grab the headers
+storm_data_headers <- names(read.csv(storm_data_bz2, header = T, nrow = 1))
+# create a vector to ignore most of the variables when we read them in since we're not
+# interested in most of them -- only in data the can affect the answers
+# i.e. storm data that impacts health or property
+header_char_classes <- rep("NULL", 37)
+# set the variables we are interested in to type char so they read in quickly
+header_char_classes[c(2,8,23:28,36:37)] <- "character"
+# verify the mapping
+cbind(storm_data_headers, header_char_classes)
 ```
 
 ```{r read data}
