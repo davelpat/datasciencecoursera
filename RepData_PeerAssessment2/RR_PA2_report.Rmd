@@ -170,9 +170,70 @@ sd2 <- select(storm_data, c(1:8,10)) %>%
                 "Dust Devil") %>%
   replace_event("^(heat wave|(excessive|record) heat)", 
                 "Excessive Heat") %>%
+  replace_event("^((extreme|unseason).*(cold|chill)|hyp(o|er)thermia)", 
+                "Extreme Cold/Wind Chill") %>%
+  replace_event("^\\s*flash.*flood", 
+                "Flash Flood") %>%
+  replace_event("^(((ice jam|river)*\\s*flood)|urban.*fld|high water)", 
+                "Flood") %>%
+  replace_event_wo("(freez|frost)", 
+                   "fog", 
+                   "Frost/Freeze") %>%
+  replace_event("^(funnel|whirlwind)", 
+                "Funnel Cloud") %>%
+  replace_event("^(small )?hail", 
+                "Hail") %>%
+  replace_event("(^heat$|warm)", 
+                "Heat") %>%
+  replace_event("^((heavy|hvy|torrential|unseasonal).*rain|rain)", 
+                "Heavy Rain") %>%
+  replace_event("^((heavy|excessive).*snow|snow squall)", 
+                "Heavy Snow") %>%
+  replace_event("^\\s*(high|heavy|rough|hazardous).*(surf|seas|swell)", 
+                "High Surf") %>%
+  replace_event("^Hurricane|Typhoon", 
+                "Hurricane (Typhoon)") %>%
+  replace_event_wo("(ic[ey]|glaze)", 
+                   "jam", 
+                   "Ice Storm") %>%
+  replace_event("^lake.*snow", 
+                "Lake-Effect Snow") %>%
+  replace_event("^Marine (Thunderstorm|Tstm) Wind", 
+                "Marine Thunderstorm Wind") %>%
+  replace_event("^rip current", 
+                "Rip Current") %>%
+  replace_event("^Seiche|(astro.*)?high tide", 
+                "Seiche") %>%
+  replace_event("^(storm surge|coast.*storm|tidal|rogue|high tide)", 
+                "Storm Surge/Tide") %>%
+  replace_event_wo("(Strong Wind|wind damage|(down|micro)burst)", 
+                   "marine",
+                   "Strong Wind") %>%
   replace_event("^\\s*(tstm|thunder).*", 
                 "Thunderstorm Wind") %>%
+  replace_event_wo("wind", 
+                   "chill|marine|strong|thunder", 
+                   "High Wind") %>%
+  replace_event("^(water|land)spout", 
+                "Waterspout") %>%
+  replace_event("fire", 
+                "Wildfire") %>%
+  replace_event_wo("((wint[ery]+ (weather|mix))|snow|mixed precip)", 
+                   "heavy|excessive|lake", 
+                   "Winter Weather") %>%
+  replace_event("other|marine accident|drowning", "Other") %>%
   mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))
+```
+
+Having mapped the storm event data into standard type names, we can see the frequency of 
+each of the types of events. Note that there are 49 event types in our data. The extra 
+"Other" catagory is the catchall for those 36 events that were reported, but did not seem to 
+fall into one of the standard types. 
+"Other" includes these event types: "Other", "Marine Accident", and "Drowning". 
+Thunderstorm Wind is the most common by an order of magnitude.
+
+```{r type table}
+table(sd2$EVTYPE)
 ```
 
 ```{r health impact}
