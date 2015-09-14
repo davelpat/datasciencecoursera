@@ -1,5 +1,5 @@
 ---
-title: "Storm Data Analysis"
+title: "Financial and Health Impacts of U.S. Storms From 1996 Through 2011"
 author: "Dave Patterson"
 date: "September 13, 2015"
 output: 
@@ -38,10 +38,11 @@ if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = sto
 
 Next, we read in the data and prepare it for analysis. Given the large volume of data 
 (over 900,000 storm events), we only read in the data needed to answer the two questions 
-of interest to speed up the processing of the data. In the list below, "NULL" indicates 
+of interest. This will eliminate two thirds of the data fields and simplify the processing, 
+as well as speed up the processing of the data In the list below, "NULL" indicates 
 that data field is ignored in this analysis.
 
-```{r get headers}
+```{r select variables}
 # grab the headers
 storm_data_headers <- names(read.csv(storm_data_bz2, header = T, nrow = 1))
 # create a vector to ignore most of the variables when we read them in since we're not
@@ -54,7 +55,33 @@ header_char_classes[c(2,8,23:28,36:37)] <- "character"
 cbind(storm_data_headers, header_char_classes)
 ```
 
-```{r read data}
+Prior to 1996, there was no standard classification of storm types. Effective beginnning in 1996, storm events were grouped into 48 standard event types. Prior to that, the storm data was both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996 in comparison to today was significantly great enough to potentially skew the data. For these reasons, we will only work with the last 15 years of the dataset. This still leaves about two thirds of the storm events in the dataset.
+
+```{r read data, cache=TRUE}
+# read in only the variables we're interested in and only the data after the new stardard has gone into effect
+# Ignoring the early data removes the most noise and about a third of the data 
+storm_data <- tbl_df(read.csv(storm_data_bz2, 
+                              stringsAsFactors=FALSE, 
+                              colClasses = header_char_classes))  %>% 
+              mutate(BGN_DATE =  mdy_hms(BGN_DATE)) %>% 
+              filter(BGN_DATE >= "1996-01-01")
+```
+
+This still leaves us with nearly two thirds of a million storm events, many of which have no impact on the questions we are looking to answer. The following code block corrects the data types and filters out storm events that were reported to have no financial or health impact. This eliminates more than two thirds of the storm events in the 15 year period, but still leaves a bit over 200,000 storm events, all of which have a bearing on our two questions.
+
+```{r filter data, cache=TRUE}
+# coerce the numeric data to be the correct type
+storm_data <- storm_data %>% 
+              mutate(FATALITIES = as.integer(FATALITIES),
+                     INJURIES = as.integer(INJURIES),
+                     PROPDMG = as.numeric(PROPDMG),
+                     CROPDMG = as.numeric(CROPDMG),
+                     REFNUM = as.integer(REFNUM))
+# finally keep only the storm data that can affect the questions; this removes
+# about two thirds of the remaining data, none of which helps answer the questions
+# since we're looking at totals, not averages
+storm_data <- storm_data %>% 
+              filter(FATALITIES > 0 | INJURIES > 0 | PROPDMG > 0 | CROPDMG > 0)
 ```
 
 ```{r analyze event types}
