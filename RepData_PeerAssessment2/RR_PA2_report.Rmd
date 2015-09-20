@@ -1,7 +1,7 @@
 ---
 title: "Financial and Health Impacts of U.S. Storms From 1996 Through 2011"
 author: "Dave Patterson"
-date: "September 13, 2015"
+date: "September 19, 2015"
 output: 
   html_document: 
     keep_md: yes
@@ -16,9 +16,10 @@ This analysis should help to prioritize resources to prepare for severe weather 
 
 ## Data Processing
 
-The following code blocks loads the required packages, downloads a copy of the 
+The following code blocks load the required packages and downloads a copy of the 
 U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database from the 
-course repository for all the storms in the U.S. from 1950 through 2011.
+course repository for all the storms in the U.S. from 1950 through 2011. The data was 
+downloaded September 19, 2015.
 
 ```{r load libs}
 packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2")
@@ -40,7 +41,7 @@ if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = sto
 Next, we read in the data and prepare it for analysis. Given the large volume of data 
 (over 900,000 storm events), we only read in the data needed to answer the two questions 
 of interest. This will eliminate two thirds of the data fields and simplify the processing, 
-as well as speed up the processing of the data In the list below, "NULL" indicates 
+as well as speed up the processing of the data. In the list below, "NULL" indicates 
 that data field is ignored in this analysis.
 
 ```{r select variables}
@@ -112,7 +113,7 @@ to the `r length(standard_events$Event.Name)` standard event types. It would gre
 analysis if the `r length(storm_data_events)` unique storm event types could be grouped into the
 `r length(standard_events$Event.Name)` standard event types. Since we're dealing with 
 `r length(storm_data$EVTYPE)` storm events, it is obvious that we'll need some tools to help with 
-the analysis. These functions were useful in exploring the storm data.
+the analysis. These functions were useful in exploring and cleaning the storm data.
 
 ```{r useful functions}
 # define a function to aid in generating regexps to group events into std types
@@ -230,7 +231,7 @@ each of the types of events. Note that there are 49 event types in our data. The
 "Other" catagory is the catchall for those 36 events that were reported, but did not seem to 
 fall into one of the standard types. 
 "Other" includes these event types: "Other", "Marine Accident", and "Drowning". 
-Thunderstorm Wind is the most common by an order of magnitude.
+Thunderstorm Wind is the most common event by an order of magnitude.
 
 ```{r type table}
 table(sd2$EVTYPE)
