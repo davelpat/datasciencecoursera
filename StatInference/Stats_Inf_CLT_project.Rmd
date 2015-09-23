@@ -28,10 +28,8 @@ rexp_sim <- function (iterations, func, sample.size = 40, lambda = 0.2) {
 }
 
 means <- rexp_sim(1000, mean)
-hist(means, breaks = 50)
 
 sds <- rexp_sim(1000, sd)
-hist(sds, breaks = 50)
 
 ```
 
@@ -42,6 +40,8 @@ appropriate numbers.
 
 ```{r means comparison}
 exp.mean <- 1 / lambda
+means.ave <- mean(means)
+hist(means, breaks = 50)
 ```
 
 ## Sample Variance versus Theoretical Variance: 
@@ -50,6 +50,8 @@ Include text that explains your understanding of the differences of the variance
 
 ```{r variances comparison}
 exp.var <- 1 / lambda
+sds.ave <- mean(sds)
+hist(sds, breaks = 50)
 ```
 
 ## Distribution: 
