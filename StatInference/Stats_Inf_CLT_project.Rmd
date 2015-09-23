@@ -20,13 +20,18 @@ Your explanations should make clear what the R code accomplishes.
 lambda <- 0.2
 hist(rexp(1000, lambda), breaks = 50)
 
-means = NULL
-for (i in 1 : 1000) means = c(means, mean(rexp(40, lambda)))
+# rexp_sim returns a vector that has a function applied to a number of samples of random exponentials
+rexp_sim <- function (iterations, func, sample.size = 40, lambda = 0.2) {
+  sim.vec = NULL
+  for (i in 1 : iterations) sim.vec = c(sim.vec, func(rexp(sample.size, lambda)))
+  sim.vec
+}
+
+means <- rexp_sim(1000, mean)
 hist(means, breaks = 50)
-  
-std.devs = NULL
-for (i in 1 : 1000) std.devs = c(std.devs, sd(rexp(40, lambda)))
-hist(std.devs, breaks = 50)
+
+sds <- rexp_sim(1000, sd)
+hist(sds, breaks = 50)
 
 ```
 
