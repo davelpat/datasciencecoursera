@@ -24,6 +24,10 @@ means = NULL
 for (i in 1 : 1000) means = c(means, mean(rexp(40, lambda)))
 hist(means, breaks = 50)
   
+std.devs = NULL
+for (i in 1 : 1000) std.devs = c(std.devs, sd(rexp(40, lambda)))
+hist(std.devs, breaks = 50)
+
 ```
 
 ## Sample Mean versus Theoretical Mean: 
