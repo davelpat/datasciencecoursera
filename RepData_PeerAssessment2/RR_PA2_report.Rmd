@@ -226,6 +226,8 @@ sd2 <- select(storm_data, c(1:8,10)) %>%
   mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))
 ```
 
+## Results
+
 Having mapped the storm event data into standard type names, we can see the frequency of 
 each of the types of events. Note that there are 49 event types in our data. The extra 
 "Other" catagory is the catchall for those 36 events that were reported, but did not seem to 
@@ -237,8 +239,19 @@ Thunderstorm Wind is the most common event by an order of magnitude.
 table(sd2$EVTYPE)
 ```
 
+### Health Impacts
+
+Here are the top ten storm event types that have an impact on public health, broken out by 
+Fatalities and Injuries.
+
 ```{r health impact}
+
 ```
+
+### Financial Impacts
+
+Here are the top ten storm event types that have a financial impact, broken out by 
+crop damage and property damage.
 
 ```{r financial impact}
 ```
