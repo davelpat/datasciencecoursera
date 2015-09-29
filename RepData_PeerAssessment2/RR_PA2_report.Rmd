@@ -22,7 +22,7 @@ course repository for all the storms in the U.S. from 1950 through 2011. The dat
 downloaded September 19, 2015.
 
 ```{r load libs}
-packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2")
+packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2", "grid", "gridExtra")
 sapply(packages, require, character.only = TRUE, quietly = TRUE)
 ```
 
@@ -240,22 +240,31 @@ Thunderstorm Wind is the most common event by an order of magnitude.
 # Show the table of counts of all event types
 table(sd2$EVTYPE)
 
+# function to plot horizontal barchart of top ten events most impactful events for an impact
+# evdata should be a "tbl_df" of ten rows, with the name of the storm event as the first column
+# and the count of the impact (frequency, fatalities, injuries, or damage) as the second column
+tt_plot <- function(evdata, title) {
+  evdata %>% 
+    setnames(c("Event", "Count")) %>%
+    mutate(Event = factor(as.character(Event), levels=Event)) %>%
+    ggplot(aes(x=desc(Event),
+               y=Count, 
+               fill = Event)) +
+    geom_bar(stat="identity") + 
+    scale_x_continuous(breaks=(-1:-10), labels=evdata$Event) +
+    guides(fill=FALSE) + 
+    ggtitle(title) +
+    theme_bw() +
+    #    theme(axis.title.x = element_blank()) +
+    theme(axis.title.y = element_blank()) +
+    coord_flip()
+}
+
 # Plot the ten most frequent events (tte = top ten events)
 tte <- head(sort(table(sd2$EVTYPE), decreasing = TRUE), 10) %>% 
-       as.data.table(keep.rownames = TRUE) %>% 
-       setnames(c("Event", "Count")) %>%
-       mutate(Event = factor(Event, levels=Event))
+       as.data.table(keep.rownames = TRUE)
+tt_plot(tte, "Top Ten Most Frequent Events")
 
-ggplot(data=tte, aes(x=desc(Event),
-                     y=Count, 
-                     fill = Event)) +
-  scale_x_continuous(breaks=(-1:-10), labels=tte$Event) +
-  guides(fill=FALSE) + 
-  ggtitle("Ten Most Frequently Reported Events") +
-  geom_bar(stat="identity") + 
-  theme_bw() +
-  theme(axis.title.y = element_blank()) +
-  coord_flip()
 ```
 
 ### Health Impacts
@@ -269,13 +278,19 @@ Fatalities and Injuries.
 ttf <- tbl_df(aggregate(FATALITIES ~ EVTYPE, sd2, sum)) %>% 
     arrange(desc(FATALITIES)) %>% 
     head(10)
-ttf
+ttfp <- tt_plot(ttf, "Top Ten Most Fatal Events")
 
 # top ten events causing the most injuries
 tti <- tbl_df(aggregate(INJURIES ~ EVTYPE, sd2, sum)) %>% 
     arrange(desc(INJURIES)) %>% 
     head(10)
-tti
+ttip <- tt_plot(tti, "Top Ten Most Injurious Events")
+
+# Print both graphs as a single plot
+## this approach generates this error:
+## Error in gList(list(grobs = list(list(x = 0.5, y = 0.5, width = 1, height = 1,  : 
+##  only 'grobs' allowed in "gList"
+grid.arrange(ttfp, ttip, nrow = 2, main = "Health Impacts of Storms")
 ```
 
 ### Financial Impacts
