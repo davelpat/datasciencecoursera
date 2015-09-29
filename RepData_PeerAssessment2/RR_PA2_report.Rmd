@@ -150,7 +150,7 @@ replace_event_wo <- function(src, pattern, exclude, replacement) {
 
 Using these functions we can map the storm data events into standard events.
 
-```{r map events}
+```{r map events, cache=TRUE}
 # Use regular expressions to map the dirty event type fields into standard names
 sd2 <- select(storm_data, c(1:8,10)) %>% 
   replace_event("^Astronomical Low Tide", 
@@ -236,7 +236,26 @@ fall into one of the standard types.
 Thunderstorm Wind is the most common event by an order of magnitude.
 
 ```{r type table}
+
+# Show the table of counts of all event types
 table(sd2$EVTYPE)
+
+# Plot the ten most frequent events
+tte <- head(sort(table(sd2$EVTYPE), decreasing = TRUE), 10) %>% 
+       as.data.table(keep.rownames = TRUE) %>% 
+       setnames(c("Event", "Count")) %>%
+       mutate(Event = factor(Event, levels=Event))
+
+ggplot(data=tte, aes(x=desc(Event),
+                     y=Count, 
+                     fill = Event)) +
+  scale_x_continuous(breaks=(-1:-10), labels=tte$Event) +
+  guides(fill=FALSE) + 
+  ggtitle("Ten Most Frequently Reported Events") +
+  geom_bar(stat="identity") + 
+  theme_bw() +
+  theme(axis.title.y = element_blank()) +
+  coord_flip()
 ```
 
 ### Health Impacts
@@ -245,6 +264,7 @@ Here are the top ten storm event types that have an impact on public health, bro
 Fatalities and Injuries.
 
 ```{r health impact}
+
 
 ```
 
