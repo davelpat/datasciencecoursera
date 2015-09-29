@@ -235,12 +235,12 @@ fall into one of the standard types.
 "Other" includes these event types: "Other", "Marine Accident", and "Drowning". 
 Thunderstorm Wind is the most common event by an order of magnitude.
 
-```{r type table}
+```{r type table, cache=TRUE}
 
 # Show the table of counts of all event types
 table(sd2$EVTYPE)
 
-# Plot the ten most frequent events
+# Plot the ten most frequent events (tte = top ten events)
 tte <- head(sort(table(sd2$EVTYPE), decreasing = TRUE), 10) %>% 
        as.data.table(keep.rownames = TRUE) %>% 
        setnames(c("Event", "Count")) %>%
@@ -263,9 +263,19 @@ ggplot(data=tte, aes(x=desc(Event),
 Here are the top ten storm event types that have an impact on public health, broken out by 
 Fatalities and Injuries.
 
-```{r health impact}
+```{r health impact, cache=TRUE}
 
+# top ten events causing the most fatalities
+ttf <- tbl_df(aggregate(FATALITIES ~ EVTYPE, sd2, sum)) %>% 
+    arrange(desc(FATALITIES)) %>% 
+    head(10)
+ttf
 
+# top ten events causing the most injuries
+tti <- tbl_df(aggregate(INJURIES ~ EVTYPE, sd2, sum)) %>% 
+    arrange(desc(INJURIES)) %>% 
+    head(10)
+tti
 ```
 
 ### Financial Impacts
@@ -273,6 +283,6 @@ Fatalities and Injuries.
 Here are the top ten storm event types that have a financial impact, broken out by 
 crop damage and property damage.
 
-```{r financial impact}
+```{r financial impact, cache=TRUE}
 ```
 
