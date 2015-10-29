@@ -152,7 +152,7 @@ Using these functions we can map the storm data events into standard events.
 
 ```{r map events, cache=TRUE}
 # Use regular expressions to map the dirty event type fields into standard names
-sd2 <- select(storm_data, c(1:8,10)) %>% 
+storm_data <- select(storm_data, c(1:8,10)) %>% 
   replace_event("^Astronomical Low Tide", 
                 "Astronomical Low Tide") %>%
   replace_event("(coast|cstl|beach).*(flood|erosion)", 
@@ -238,7 +238,7 @@ Thunderstorm Wind is the most common event by an order of magnitude.
 ```{r type table, cache=TRUE}
 
 # Show the table of counts of all event types
-table(sd2$EVTYPE)
+table(storm_data$EVTYPE)
 
 # function to plot horizontal barchart of top ten events most impactful events for an impact
 # evdata should be a "tbl_df" of ten rows, with the name of the storm event as the first column
@@ -255,13 +255,13 @@ tt_plot <- function(evdata, title) {
     guides(fill=FALSE) + 
     ggtitle(title) +
     theme_bw() +
-    #    theme(axis.title.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
     theme(axis.title.y = element_blank()) +
     coord_flip()
 }
 
 # Plot the ten most frequent events (tte = top ten events)
-tte <- head(sort(table(sd2$EVTYPE), decreasing = TRUE), 10) %>% 
+tte <- head(sort(table(storm_data$EVTYPE), decreasing = TRUE), 10) %>% 
        as.data.table(keep.rownames = TRUE)
 tt_plot(tte, "Top Ten Most Frequent Events")
 
@@ -275,22 +275,24 @@ Fatalities and Injuries.
 ```{r health impact, cache=TRUE}
 
 # top ten events causing the most fatalities
-ttf <- tbl_df(aggregate(FATALITIES ~ EVTYPE, sd2, sum)) %>% 
+ttf <- tbl_df(aggregate(FATALITIES ~ EVTYPE, storm_data, sum)) %>% 
     arrange(desc(FATALITIES)) %>% 
     head(10)
 ttfp <- tt_plot(ttf, "Top Ten Most Fatal Events")
+ttfp
 
 # top ten events causing the most injuries
-tti <- tbl_df(aggregate(INJURIES ~ EVTYPE, sd2, sum)) %>% 
+tti <- tbl_df(aggregate(INJURIES ~ EVTYPE, storm_data, sum)) %>% 
     arrange(desc(INJURIES)) %>% 
     head(10)
 ttip <- tt_plot(tti, "Top Ten Most Injurious Events")
+ttip
 
 # Print both graphs as a single plot
 ## this approach generates this error:
 ## Error in gList(list(grobs = list(list(x = 0.5, y = 0.5, width = 1, height = 1,  : 
 ##  only 'grobs' allowed in "gList"
-grid.arrange(ttfp, ttip, nrow = 2, main = "Health Impacts of Storms")
+#grid.arrange(ttfp, ttip, nrow = 2, main = "Health Impacts of Storms")
 ```
 
 ### Financial Impacts
@@ -299,5 +301,34 @@ Here are the top ten storm event types that have a financial impact, broken out 
 crop damage and property damage.
 
 ```{r financial impact, cache=TRUE}
+
+# Apply the exponents to the damage costs, then total by event types
+# What is the multiplier of the EXP variables
+## Convert to billions of dollars
+get_exp_val <- function (exp_var) {
+  switch(exp_var, "K" = 10^-6,
+                  "M" = 10^-3,
+                  "B" = 1,
+                  10^-9)}
+
+# normalize the asset damage
+storm_data <- storm_data %>%
+       mutate(PROPDMGNORM = PROPDMG * sapply(PROPDMGEXP, get_exp_val)) %>%
+       mutate(CROPDMGNORM = CROPDMG * sapply(CROPDMGEXP, get_exp_val)) %>%
+       group_by(EVTYPE)
+
+# top ten events causing the most property damage
+ttp <- tbl_df(aggregate(PROPDMGNORM ~ EVTYPE, storm_data, sum)) %>% 
+    arrange(desc(PROPDMGNORM)) %>% 
+    head(10)
+ttpp <- tt_plot(ttp, "Top Ten Events Causing the Most Property Damage\nBillions of Dollars")
+ttpp
+
+# top ten events causing the most crop damage
+ttc <- tbl_df(aggregate(CROPDMGNORM ~ EVTYPE, storm_data, sum)) %>% 
+    arrange(desc(CROPDMGNORM)) %>% 
+    head(10)
+ttcp <- tt_plot(ttc, "Top Ten Events Causing the Most Crop Damage\nBillions of Dollars")
+ttcp
 ```
 
