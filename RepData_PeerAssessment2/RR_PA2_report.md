@@ -1,0 +1,423 @@
+# Financial and Health Impacts of U.S. Storms From 1996 Through 2011
+Dave Patterson  
+September 19, 2015  
+
+## Synopsis
+The purpose of this report is to explore the NOAA Storm Database and analyze the types of 
+storm events to understand  
+1. which are most harmful with respect to population health and  
+2. which have the greatest economic consequences?  
+This analysis should help to prioritize resources to prepare for severe weather events.
+
+## Data Processing
+
+The following code blocks load the required packages and downloads a copy of the 
+U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database from the 
+course repository for all the storms in the U.S. from 1950 through 2011. The data was 
+downloaded September 19, 2015.
+
+
+```r
+packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2", "cowplot")
+sapply(packages, require, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)
+```
+
+```
+## data.table      dplyr  lubridate    stringr    ggplot2    cowplot 
+##       TRUE       TRUE       TRUE       TRUE       TRUE       TRUE
+```
+
+
+```r
+original_data  <- "http://www.ncdc.noaa.gov/stormevents/details.jsp"
+storm_data_url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+storm_data_doc <- "http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"
+storm_data_faq <- "http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf"
+storm_data_bz2 <- "StormData.csv.bz2"
+storm_data_events_file <- "StormDataEventTable.csv"
+
+# if the data file is not already present, get the source data file
+if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = storm_data_bz2)}
+```
+
+Next, we read in the data and prepare it for analysis. Given the large volume of data 
+(over 900,000 storm events), we only read in the data needed to answer the two questions 
+of interest. This will eliminate two thirds of the data fields and simplify, 
+as well as speed up, the processing of the data. In the list below, "NULL" indicates 
+that data field is ignored in this analysis.
+
+
+```r
+# grab the headers
+storm_data_headers <- names(read.csv(storm_data_bz2, header = T, nrow = 1))
+# create a vector to ignore most of the variables when we read them in since we're not
+# interested in most of them -- only in data the can affect the answers
+# i.e. storm data that impacts health or property
+header_char_classes <- rep("NULL", 37)
+# set the variables we are interested in to type char so they read in quickly
+header_char_classes[c(2,8,23:28,36:37)] <- "character"
+# verify the mapping
+cbind(storm_data_headers, header_char_classes)
+```
+
+```
+##       storm_data_headers header_char_classes
+##  [1,] "STATE__"          "NULL"             
+##  [2,] "BGN_DATE"         "character"        
+##  [3,] "BGN_TIME"         "NULL"             
+##  [4,] "TIME_ZONE"        "NULL"             
+##  [5,] "COUNTY"           "NULL"             
+##  [6,] "COUNTYNAME"       "NULL"             
+##  [7,] "STATE"            "NULL"             
+##  [8,] "EVTYPE"           "character"        
+##  [9,] "BGN_RANGE"        "NULL"             
+## [10,] "BGN_AZI"          "NULL"             
+## [11,] "BGN_LOCATI"       "NULL"             
+## [12,] "END_DATE"         "NULL"             
+## [13,] "END_TIME"         "NULL"             
+## [14,] "COUNTY_END"       "NULL"             
+## [15,] "COUNTYENDN"       "NULL"             
+## [16,] "END_RANGE"        "NULL"             
+## [17,] "END_AZI"          "NULL"             
+## [18,] "END_LOCATI"       "NULL"             
+## [19,] "LENGTH"           "NULL"             
+## [20,] "WIDTH"            "NULL"             
+## [21,] "F"                "NULL"             
+## [22,] "MAG"              "NULL"             
+## [23,] "FATALITIES"       "character"        
+## [24,] "INJURIES"         "character"        
+## [25,] "PROPDMG"          "character"        
+## [26,] "PROPDMGEXP"       "character"        
+## [27,] "CROPDMG"          "character"        
+## [28,] "CROPDMGEXP"       "character"        
+## [29,] "WFO"              "NULL"             
+## [30,] "STATEOFFIC"       "NULL"             
+## [31,] "ZONENAMES"        "NULL"             
+## [32,] "LATITUDE"         "NULL"             
+## [33,] "LONGITUDE"        "NULL"             
+## [34,] "LATITUDE_E"       "NULL"             
+## [35,] "LONGITUDE_"       "NULL"             
+## [36,] "REMARKS"          "character"        
+## [37,] "REFNUM"           "character"
+```
+
+Prior to 1996, there was no standard classification of storm types. Effective beginnning in 1996, 
+storm events were grouped into 48 standard event types. Prior to that, the storm data was 
+both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996
+in comparison to today was significantly great enough to potentially skew the data. 
+For these reasons, we will only work with the last 15 years of the dataset. 
+This still leaves about two thirds of the storm events in the dataset.
+
+
+```r
+# read in only the variables we're interested in and only the data after the new stardard has gone into effect
+# Ignoring the early data removes the most noise and about a third of the data 
+storm_data <- tbl_df(read.csv(storm_data_bz2, 
+                              stringsAsFactors=FALSE, 
+                              colClasses = header_char_classes))  %>% 
+              mutate(BGN_DATE =  mdy_hms(BGN_DATE)) %>% 
+              filter(BGN_DATE >= "1996-01-01")
+```
+
+This still leaves us with nearly two thirds of a million storm events, many of which 
+have no impact on the questions we are looking to answer. The following code block 
+corrects the data types and filters out storm events that were reported to have 
+no financial or health impact. This eliminates more than two thirds of the storm events 
+in the 15 year period, but still leaves a bit over 200,000 storm events, 
+all of which have a bearing on our two questions.
+
+
+```r
+# coerce the numeric data to be the correct type
+storm_data <- storm_data %>% 
+              mutate(FATALITIES = as.integer(FATALITIES),
+                     INJURIES = as.integer(INJURIES),
+                     PROPDMG = as.numeric(PROPDMG),
+                     CROPDMG = as.numeric(CROPDMG),
+                     REFNUM = as.integer(REFNUM))
+# finally keep only the storm data that can affect the questions; this removes
+# about two thirds of the remaining data, none of which helps answer the questions
+# since we're looking at totals, not averages
+storm_data <- storm_data %>% 
+              filter(FATALITIES > 0 | INJURIES > 0 | PROPDMG > 0 | CROPDMG > 0)
+```
+
+In a first look at the storm data, we can see the storm event types do not always align 
+with the standard event names.
+
+
+```r
+# read in the standard event types used starting 1996
+# extracted from storm_data_doc file (Table 1. Storm Data Event Table)
+standard_events <- read.csv(storm_data_events_file, comment.char = "#", stringsAsFactors = FALSE)
+
+# and from our storm data
+storm_data_events <- unique(storm_data$EVTYPE)
+```
+
+The storm data contains **222** unique storm event types in contrast 
+to the 48 standard event types. It would greatly simplfy the
+analysis if the 222 unique storm event types could be grouped into the
+48 standard event types. Since we're dealing with 
+201313 storm events, it is obvious that we'll need some tools to help with 
+the analysis. These functions were useful in exploring and cleaning the storm data.
+
+
+```r
+# define a function to aid in generating regexps to group events into std types
+get_event <- function(src, pattern) {
+               unique(grep(pattern, 
+                           src, 
+                           ignore.case = TRUE, 
+                           value = TRUE))}
+# and an example call
+# get_event(events, "^\\s*(tstm|thunder)")
+
+# define a function to get the remarks for a specific storm reference
+get_remarks_for <- function(ref) {
+  storm_data[(storm_data$REFNUM == ref),"REMARKS"]
+}
+
+# define a function to replace the dirty event types with standard names
+# NOTE that argument order is set to allow pipelining
+replace_event <- function(src, pattern, replacement) {
+                   idx <- grepl(pattern, src$EVTYPE, ignore.case = TRUE)
+                   src[idx, "EVTYPE"] <- replacement
+                   src}
+
+# define a function to replace the dirty event types with standard names while
+# excluding a specific phrase or word
+# NOTE that argument order is set to allow pipelining
+replace_event_wo <- function(src, pattern, exclude, replacement) {
+                   idx <- grepl(pattern, src$EVTYPE, ignore.case = TRUE) &
+                          !grepl(exclude, src$EVTYPE, ignore.case = TRUE)
+                   src[idx, "EVTYPE"] <- replacement
+                   src}
+```
+
+Using these functions we can map the storm data events into standard events.
+
+
+```r
+# Use regular expressions to map the dirty event type fields into standard names
+storm_data <- select(storm_data, c(1:8,10)) %>% 
+  replace_event("^Astronomical Low Tide", 
+                "Astronomical Low Tide") %>%
+  replace_event("(coast|cstl|beach).*(flood|erosion)", 
+                "Coastal Flood") %>%
+  replace_event("^(extended )*cold", 
+                "Cold/Wind Chill") %>%
+  replace_event("^(land|mud|rock).*(slide|slump)", 
+                "Debris Flow") %>%
+  replace_event_wo("fog", 
+                   "freezing", 
+                   "Dense Fog") %>%
+  replace_event_wo("dust", 
+                   "devil", 
+                   "Dust Storm") %>%
+  replace_event("dust devil", 
+                "Dust Devil") %>%
+  replace_event("^(heat wave|(excessive|record) heat)", 
+                "Excessive Heat") %>%
+  replace_event("^((extreme|unseason).*(cold|chill)|hyp(o|er)thermia)", 
+                "Extreme Cold/Wind Chill") %>%
+  replace_event("^\\s*flash.*flood", 
+                "Flash Flood") %>%
+  replace_event("^(((ice jam|river)*\\s*flood)|urban.*fld|high water)", 
+                "Flood") %>%
+  replace_event_wo("(freez|frost)", 
+                   "fog", 
+                   "Frost/Freeze") %>%
+  replace_event("^(funnel|whirlwind)", 
+                "Funnel Cloud") %>%
+  replace_event("^(small )?hail", 
+                "Hail") %>%
+  replace_event("(^heat$|warm)", 
+                "Heat") %>%
+  replace_event("^((heavy|hvy|torrential|unseasonal).*rain|rain)", 
+                "Heavy Rain") %>%
+  replace_event("^((heavy|excessive).*snow|snow squall)", 
+                "Heavy Snow") %>%
+  replace_event("^\\s*(high|heavy|rough|hazardous).*(surf|seas|swell)", 
+                "High Surf") %>%
+  replace_event("^Hurricane|Typhoon", 
+                "Hurricane (Typhoon)") %>%
+  replace_event_wo("(ic[ey]|glaze)", 
+                   "jam", 
+                   "Ice Storm") %>%
+  replace_event("^lake.*snow", 
+                "Lake-Effect Snow") %>%
+  replace_event("^Marine (Thunderstorm|Tstm) Wind", 
+                "Marine Thunderstorm Wind") %>%
+  replace_event("^rip current", 
+                "Rip Current") %>%
+  replace_event("^Seiche|(astro.*)?high tide", 
+                "Seiche") %>%
+  replace_event("^(storm surge|coast.*storm|tidal|rogue|high tide)", 
+                "Storm Surge/Tide") %>%
+  replace_event_wo("(Strong Wind|wind damage|(down|micro)burst)", 
+                   "marine",
+                   "Strong Wind") %>%
+  replace_event("^\\s*(tstm|thunder).*", 
+                "Thunderstorm Wind") %>%
+  replace_event_wo("wind", 
+                   "chill|marine|strong|thunder", 
+                   "High Wind") %>%
+  replace_event("^(water|land)spout", 
+                "Waterspout") %>%
+  replace_event("fire", 
+                "Wildfire") %>%
+  replace_event_wo("((wint[ery]+ (weather|mix))|snow|mixed precip)", 
+                   "heavy|excessive|lake", 
+                   "Winter Weather") %>%
+  replace_event("other|marine accident|drowning", "Other") %>%
+  mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))
+```
+
+## Results
+
+Having mapped the storm event data into standard type names, we can see the frequency of 
+each of the types of events. Note that there are 49 event types in our data. The extra 
+"Other" catagory is the catchall for those 36 events that were reported, but did not seem to 
+fall into one of the standard types. 
+"Other" includes these event types: "Other", "Marine Accident", and "Drowning". 
+Thunderstorm Wind is the most common event by an order of magnitude.
+
+
+```r
+# Show the table of counts of all event types
+table(storm_data$EVTYPE)
+```
+
+```
+## 
+##    Astronomical Low Tide                Avalanche                 Blizzard 
+##                        2                      264                      228 
+##            Coastal Flood          Cold/Wind Chill                Dam Break 
+##                      196                      115                        2 
+##              Debris Flow                Dense Fog              Dense Smoke 
+##                      201                      159                        1 
+##                  Drought               Dust Devil               Dust Storm 
+##                      258                       84                       97 
+##           Excessive Heat  Extreme Cold/Wind Chill              Flash Flood 
+##                      687                      307                    19013 
+##                    Flood             Freezing Fog             Frost/Freeze 
+##                    10305                        7                      177 
+##             Funnel Cloud                     Hail                     Heat 
+##                       12                    22690                      170 
+##               Heavy Rain               Heavy Snow                High Surf 
+##                     1056                     1063                      224 
+##                High Wind      Hurricane (Typhoon)                Ice Storm 
+##                     5528                      208                      671 
+##         Lake-Effect Snow          Lakeshore Flood                Lightning 
+##                      198                        5                    11151 
+##              Marine Hail         Marine High Wind       Marine Strong Wind 
+##                        2                       19                       46 
+## Marine Thunderstorm Wind                    Other              Rip Current 
+##                      142                       36                      603 
+##                   Seiche         Storm Surge/Tide              Strong Wind 
+##                       17                      226                     3496 
+##        Thunderstorm Wind                  Tornado      Tropical Depression 
+##                   105370                    12365                       35 
+##           Tropical Storm                  Tsunami             Volcanic Ash 
+##                      410                       14                        2 
+##               Waterspout                 Wildfire             Winter Storm 
+##                       29                     1229                     1459 
+##           Winter Weather 
+##                      734
+```
+
+```r
+# function to plot horizontal barchart of top ten events most impactful events for an impact
+# evdata should be a "tbl_df" of ten rows, with the name of the storm event as the first column
+# and the count of the impact (frequency, fatalities, injuries, or damage) as the second column
+tt_plot <- function(evdata, title, cnt_label) {
+  evdata %>% 
+    setnames(c("Event", "Count")) %>%
+    mutate(Event = factor(as.character(Event), levels=Event)) %>%
+    ggplot(aes(x = desc(Event),
+               y = Count, 
+               fill = Event)) +
+           geom_bar(stat="identity") + 
+           scale_x_continuous(breaks=(-1:-10), labels=evdata$Event) +
+           guides(fill=FALSE) + 
+           ggtitle(title) +
+           ylab(cnt_label) +
+           coord_flip() +
+           theme_bw() +
+           theme(axis.title.y = element_blank())
+}
+
+# Plot the ten most frequent events (tte = top ten events)
+tte <- head(sort(table(storm_data$EVTYPE), decreasing = TRUE), 10) %>% 
+       as.data.table(keep.rownames = TRUE)
+tt_plot(tte, "Top Ten Most Frequent Events", "Occurrences")
+```
+
+![](RR_PA2_report_files/figure-html/type table-1.png) 
+
+### Health Impacts
+
+Here are the top ten storm event types that have an impact on public health, broken out by 
+Fatalities and Injuries.
+
+
+```r
+# top ten events causing the most fatalities
+ttf <- tbl_df(aggregate(FATALITIES ~ EVTYPE, storm_data, sum)) %>% 
+    arrange(desc(FATALITIES)) %>% 
+    head(10)
+ttfp <- tt_plot(ttf, "Top Ten Most Fatal Events", "Fatalities")
+
+# top ten events causing the most injuries
+tti <- tbl_df(aggregate(INJURIES ~ EVTYPE, storm_data, sum)) %>% 
+    arrange(desc(INJURIES)) %>% 
+    head(10)
+ttip <- tt_plot(tti, "Top Ten Most Injurious Events", "Injuries")
+
+# Print both graphs as a single plot
+plot_grid(ttfp, ttip, nrow = 2)
+```
+
+![](RR_PA2_report_files/figure-html/health impact-1.png) 
+
+### Financial Impacts
+
+Here are the top ten storm event types that have a financial impact, broken out by 
+crop damage and property damage.
+
+
+```r
+# Apply the exponents to the damage costs, then total by event types
+# What is the multiplier of the EXP variables
+## Convert to billions of dollars
+get_exp_val <- function (exp_var) {
+  switch(exp_var, "K" = 10^-6,
+                  "M" = 10^-3,
+                  "B" = 1,
+                  10^-9)}
+
+# normalize the asset damage
+storm_data <- storm_data %>%
+       mutate(PROPDMGNORM = PROPDMG * sapply(PROPDMGEXP, get_exp_val)) %>%
+       mutate(CROPDMGNORM = CROPDMG * sapply(CROPDMGEXP, get_exp_val)) %>%
+       group_by(EVTYPE)
+
+# top ten events causing the most property damage
+ttp <- tbl_df(aggregate(PROPDMGNORM ~ EVTYPE, storm_data, sum)) %>% 
+    arrange(desc(PROPDMGNORM)) %>% 
+    head(10)
+ttpp <- tt_plot(ttp, "Top Ten Events Causing the Most Property Damage", "Billions of Dollars Damage")
+
+# top ten events causing the most crop damage
+ttc <- tbl_df(aggregate(CROPDMGNORM ~ EVTYPE, storm_data, sum)) %>% 
+    arrange(desc(CROPDMGNORM)) %>% 
+    head(10)
+ttcp <- tt_plot(ttc, "Top Ten Events Causing the Most Crop Damage", "Billions of Dollars Damage")
+
+# Print both graphs as a single plot
+plot_grid(ttpp, ttcp, nrow = 2)
+```
+
+![](RR_PA2_report_files/figure-html/financial impact-1.png) 
+
