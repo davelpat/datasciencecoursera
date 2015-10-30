@@ -22,8 +22,8 @@ course repository for all the storms in the U.S. from 1950 through 2011. The dat
 downloaded September 19, 2015.
 
 ```{r load libs}
-packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2", "grid", "gridExtra")
-sapply(packages, require, character.only = TRUE, quietly = TRUE)
+packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2", "cowplot")
+sapply(packages, require, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)
 ```
 
 ```{r get files}
@@ -40,8 +40,8 @@ if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = sto
 
 Next, we read in the data and prepare it for analysis. Given the large volume of data 
 (over 900,000 storm events), we only read in the data needed to answer the two questions 
-of interest. This will eliminate two thirds of the data fields and simplify the processing, 
-as well as speed up the processing of the data. In the list below, "NULL" indicates 
+of interest. This will eliminate two thirds of the data fields and simplify, 
+as well as speed up, the processing of the data. In the list below, "NULL" indicates 
 that data field is ignored in this analysis.
 
 ```{r select variables}
@@ -243,27 +243,27 @@ table(storm_data$EVTYPE)
 # function to plot horizontal barchart of top ten events most impactful events for an impact
 # evdata should be a "tbl_df" of ten rows, with the name of the storm event as the first column
 # and the count of the impact (frequency, fatalities, injuries, or damage) as the second column
-tt_plot <- function(evdata, title) {
+tt_plot <- function(evdata, title, cnt_label) {
   evdata %>% 
     setnames(c("Event", "Count")) %>%
     mutate(Event = factor(as.character(Event), levels=Event)) %>%
-    ggplot(aes(x=desc(Event),
-               y=Count, 
+    ggplot(aes(x = desc(Event),
+               y = Count, 
                fill = Event)) +
-    geom_bar(stat="identity") + 
-    scale_x_continuous(breaks=(-1:-10), labels=evdata$Event) +
-    guides(fill=FALSE) + 
-    ggtitle(title) +
-    theme_bw() +
-    theme(axis.title.x = element_blank()) +
-    theme(axis.title.y = element_blank()) +
-    coord_flip()
+           geom_bar(stat="identity") + 
+           scale_x_continuous(breaks=(-1:-10), labels=evdata$Event) +
+           guides(fill=FALSE) + 
+           ggtitle(title) +
+           ylab(cnt_label) +
+           coord_flip() +
+           theme_bw() +
+           theme(axis.title.y = element_blank())
 }
 
 # Plot the ten most frequent events (tte = top ten events)
 tte <- head(sort(table(storm_data$EVTYPE), decreasing = TRUE), 10) %>% 
        as.data.table(keep.rownames = TRUE)
-tt_plot(tte, "Top Ten Most Frequent Events")
+tt_plot(tte, "Top Ten Most Frequent Events", "Occurrences")
 
 ```
 
@@ -278,21 +278,16 @@ Fatalities and Injuries.
 ttf <- tbl_df(aggregate(FATALITIES ~ EVTYPE, storm_data, sum)) %>% 
     arrange(desc(FATALITIES)) %>% 
     head(10)
-ttfp <- tt_plot(ttf, "Top Ten Most Fatal Events")
-ttfp
+ttfp <- tt_plot(ttf, "Top Ten Most Fatal Events", "Fatalities")
 
 # top ten events causing the most injuries
 tti <- tbl_df(aggregate(INJURIES ~ EVTYPE, storm_data, sum)) %>% 
     arrange(desc(INJURIES)) %>% 
     head(10)
-ttip <- tt_plot(tti, "Top Ten Most Injurious Events")
-ttip
+ttip <- tt_plot(tti, "Top Ten Most Injurious Events", "Injuries")
 
 # Print both graphs as a single plot
-## this approach generates this error:
-## Error in gList(list(grobs = list(list(x = 0.5, y = 0.5, width = 1, height = 1,  : 
-##  only 'grobs' allowed in "gList"
-#grid.arrange(ttfp, ttip, nrow = 2, main = "Health Impacts of Storms")
+plot_grid(ttfp, ttip, nrow = 2)
 ```
 
 ### Financial Impacts
@@ -321,14 +316,15 @@ storm_data <- storm_data %>%
 ttp <- tbl_df(aggregate(PROPDMGNORM ~ EVTYPE, storm_data, sum)) %>% 
     arrange(desc(PROPDMGNORM)) %>% 
     head(10)
-ttpp <- tt_plot(ttp, "Top Ten Events Causing the Most Property Damage\nBillions of Dollars")
-ttpp
+ttpp <- tt_plot(ttp, "Top Ten Events Causing the Most Property Damage", "Billions of Dollars Damage")
 
 # top ten events causing the most crop damage
 ttc <- tbl_df(aggregate(CROPDMGNORM ~ EVTYPE, storm_data, sum)) %>% 
     arrange(desc(CROPDMGNORM)) %>% 
     head(10)
-ttcp <- tt_plot(ttc, "Top Ten Events Causing the Most Crop Damage\nBillions of Dollars")
-ttcp
+ttcp <- tt_plot(ttc, "Top Ten Events Causing the Most Crop Damage", "Billions of Dollars Damage")
+
+# Print both graphs as a single plot
+plot_grid(ttpp, ttcp, nrow = 2)
 ```
 
