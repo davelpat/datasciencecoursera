@@ -9,12 +9,18 @@ storm events to understand
 2. which have the greatest economic consequences?  
 This analysis should help to prioritize resources to prepare for severe weather events.
 
+Prior to 1996, there was no standard classification of storm types. Effective beginning in 1996, 
+storm events were grouped into 48 standard event types. Prior to that, the storm data was 
+both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996
+in comparison to today was significantly great enough to potentially skew the data. 
+For these reasons, we will only work with the last 15 years of the data available. 
+
 ## Data Processing
 
-The following code blocks load the required packages and downloads a copy of the 
-U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database from the 
-course repository for all the storms in the U.S. from 1950 through 2011. The data was 
-downloaded September 19, 2015.
+A copy of the United States National Oceanic and Atmospheric Administration's (NOAA) 
+storm database was downloaded from the John Hopkins Data Science Coursera course 
+repository for all the storms in the United States from 1950 through 2011. 
+The data was downloaded September 19, 2015.
 
 
 ```r
@@ -40,7 +46,7 @@ storm_data_events_file <- "StormDataEventTable.csv"
 if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = storm_data_bz2)}
 ```
 
-Next, we read in the data and prepare it for analysis. Given the large volume of data 
+Given the large volume of data 
 (over 900,000 storm events), we only read in the data needed to answer the two questions 
 of interest. This will eliminate two thirds of the data fields and simplify, 
 as well as speed up, the processing of the data. In the list below, "NULL" indicates 
@@ -101,44 +107,37 @@ cbind(storm_data_headers, header_char_classes)
 ## [37,] "REFNUM"           "character"
 ```
 
-Prior to 1996, there was no standard classification of storm types. Effective beginnning in 1996, 
-storm events were grouped into 48 standard event types. Prior to that, the storm data was 
-both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996
-in comparison to today was significantly great enough to potentially skew the data. 
-For these reasons, we will only work with the last 15 years of the dataset. 
-This still leaves about two thirds of the storm events in the dataset.
+The data is loaded and prepared for analysis. Three levels of filters applied:
+1. Date: only the storm data collected after January 1, 1996 is used
+2. Fields: only the fields needed to answer the questions, as shown in the table above, is used
+3. Impact: only storm events that had a health or financial impact is used
+
+The date filter still leaves nearly two thirds of a million storm events, many of which 
+have no impact on the questions we are looking to answer. The impact filter eliminates 
+more than two thirds of the storm events in the 15 year period, but still leaves a bit 
+over 200,000 storm events, all of which have a bearing on the two questions.
 
 
 ```r
-# read in only the variables we're interested in and only the data after the new stardard has gone into effect
+# read in only the variables we're interested in and only the data after the new
+# stardard has gone into effect and that has an impact on the questions
 # Ignoring the early data removes the most noise and about a third of the data 
 storm_data <- tbl_df(read.csv(storm_data_bz2, 
                               stringsAsFactors=FALSE, 
+                              # filter the fields
                               colClasses = header_char_classes))  %>% 
+              # filter by date
               mutate(BGN_DATE =  mdy_hms(BGN_DATE)) %>% 
-              filter(BGN_DATE >= "1996-01-01")
-```
-
-This still leaves us with nearly two thirds of a million storm events, many of which 
-have no impact on the questions we are looking to answer. The following code block 
-corrects the data types and filters out storm events that were reported to have 
-no financial or health impact. This eliminates more than two thirds of the storm events 
-in the 15 year period, but still leaves a bit over 200,000 storm events, 
-all of which have a bearing on our two questions.
-
-
-```r
-# coerce the numeric data to be the correct type
-storm_data <- storm_data %>% 
+              filter(BGN_DATE >= "1996-01-01") %>%
+              # coerce the numeric data to be the correct type
               mutate(FATALITIES = as.integer(FATALITIES),
                      INJURIES = as.integer(INJURIES),
                      PROPDMG = as.numeric(PROPDMG),
                      CROPDMG = as.numeric(CROPDMG),
-                     REFNUM = as.integer(REFNUM))
-# finally keep only the storm data that can affect the questions; this removes
-# about two thirds of the remaining data, none of which helps answer the questions
-# since we're looking at totals, not averages
-storm_data <- storm_data %>% 
+                     REFNUM = as.integer(REFNUM)) %>%
+              # finally keep only the storm data that can affect the questions; this removes
+              # about two thirds of the remaining data, none of which helps answer the questions
+              # since we're looking at totals, not averages
               filter(FATALITIES > 0 | INJURIES > 0 | PROPDMG > 0 | CROPDMG > 0)
 ```
 
@@ -156,15 +155,16 @@ storm_data_events <- unique(storm_data$EVTYPE)
 ```
 
 The storm data contains **222** unique storm event types in contrast 
-to the 48 standard event types. It would greatly simplfy the
+to the 48 standard event types. It would greatly simplify the
 analysis if the 222 unique storm event types could be grouped into the
-48 standard event types. Since we're dealing with 
+48 standard event types. Since the filtered data contains 
 201313 storm events, it is obvious that we'll need some tools to help with 
 the analysis. These functions were useful in exploring and cleaning the storm data.
 
 
 ```r
-# define a function to aid in generating regexps to group events into std types
+# define a function to select storm events from the data set based on regular expressions
+# this aids in generating regexps to group events into std types
 get_event <- function(src, pattern) {
                unique(grep(pattern, 
                            src, 
@@ -195,7 +195,7 @@ replace_event_wo <- function(src, pattern, exclude, replacement) {
                    src}
 ```
 
-Using these functions we can map the storm data events into standard events.
+Using these functions the storm data events can be mapped into the standard events.
 
 
 ```r
@@ -272,13 +272,16 @@ storm_data <- select(storm_data, c(1:8,10)) %>%
                    "Winter Weather") %>%
   replace_event("other|marine accident|drowning", "Other") %>%
   mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))
+
+other_events <- storm_data$EVTYPE[storm_data$EVTYPE == "Other"]
 ```
 
 ## Results
 
 Having mapped the storm event data into standard type names, we can see the frequency of 
-each of the types of events. Note that there are 49 event types in our data. The extra 
-"Other" catagory is the catchall for those 36 events that were reported, but did not seem to 
+each of the types of events. Note that there are 49 
+event types in our data. The extra "Other" category is the catchall for those 
+36 events that were reported, but did not seem to 
 fall into one of the standard types. 
 "Other" includes these event types: "Other", "Marine Accident", and "Drowning". 
 Thunderstorm Wind is the most common event by an order of magnitude.
@@ -384,7 +387,7 @@ plot_grid(ttfp, ttip, nrow = 2)
 ### Financial Impacts
 
 Here are the top ten storm event types that have a financial impact, broken out by 
-crop damage and property damage.
+property damage and crop damage.
 
 
 ```r

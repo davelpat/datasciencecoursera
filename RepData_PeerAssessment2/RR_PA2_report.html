@@ -71,10 +71,11 @@ img {
 <div id="synopsis" class="section level2">
 <h2>Synopsis</h2>
 <p>The purpose of this report is to explore the NOAA Storm Database and analyze the types of storm events to understand<br />1. which are most harmful with respect to population health and<br />2. which have the greatest economic consequences?<br />This analysis should help to prioritize resources to prepare for severe weather events.</p>
+<p>Prior to 1996, there was no standard classification of storm types. Effective beginning in 1996, storm events were grouped into 48 standard event types. Prior to that, the storm data was both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996 in comparison to today was significantly great enough to potentially skew the data. For these reasons, we will only work with the last 15 years of the data available.</p>
 </div>
 <div id="data-processing" class="section level2">
 <h2>Data Processing</h2>
-<p>The following code blocks load the required packages and downloads a copy of the U.S. National Oceanic and Atmospheric Administration’s (NOAA) storm database from the course repository for all the storms in the U.S. from 1950 through 2011. The data was downloaded September 19, 2015.</p>
+<p>A copy of the United States National Oceanic and Atmospheric Administration’s (NOAA) storm database was downloaded from the John Hopkins Data Science Coursera course repository for all the storms in the United States from 1950 through 2011. The data was downloaded September 19, 2015.</p>
 <pre class="r"><code>packages &lt;- c(&quot;data.table&quot;, &quot;dplyr&quot;, &quot;lubridate&quot;, &quot;stringr&quot;, &quot;ggplot2&quot;, &quot;cowplot&quot;)
 sapply(packages, require, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)</code></pre>
 <pre><code>## data.table      dplyr  lubridate    stringr    ggplot2    cowplot 
@@ -88,7 +89,7 @@ storm_data_events_file &lt;- &quot;StormDataEventTable.csv&quot;
 
 # if the data file is not already present, get the source data file
 if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = storm_data_bz2)}</code></pre>
-<p>Next, we read in the data and prepare it for analysis. Given the large volume of data (over 900,000 storm events), we only read in the data needed to answer the two questions of interest. This will eliminate two thirds of the data fields and simplify, as well as speed up, the processing of the data. In the list below, “NULL” indicates that data field is ignored in this analysis.</p>
+<p>Given the large volume of data (over 900,000 storm events), we only read in the data needed to answer the two questions of interest. This will eliminate two thirds of the data fields and simplify, as well as speed up, the processing of the data. In the list below, “NULL” indicates that data field is ignored in this analysis.</p>
 <pre class="r"><code># grab the headers
 storm_data_headers &lt;- names(read.csv(storm_data_bz2, header = T, nrow = 1))
 # create a vector to ignore most of the variables when we read them in since we're not
@@ -137,26 +138,27 @@ cbind(storm_data_headers, header_char_classes)</code></pre>
 ## [35,] &quot;LONGITUDE_&quot;       &quot;NULL&quot;             
 ## [36,] &quot;REMARKS&quot;          &quot;character&quot;        
 ## [37,] &quot;REFNUM&quot;           &quot;character&quot;</code></pre>
-<p>Prior to 1996, there was no standard classification of storm types. Effective beginnning in 1996, storm events were grouped into 48 standard event types. Prior to that, the storm data was both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996 in comparison to today was significantly great enough to potentially skew the data. For these reasons, we will only work with the last 15 years of the dataset. This still leaves about two thirds of the storm events in the dataset.</p>
-<pre class="r"><code># read in only the variables we're interested in and only the data after the new stardard has gone into effect
+<p>The data is loaded and prepared for analysis. Three levels of filters applied: 1. Date: only the storm data collected after January 1, 1996 is used 2. Fields: only the fields needed to answer the questions, as shown in the table above, is used 3. Impact: only storm events that had a health or financial impact is used</p>
+<p>The date filter still leaves nearly two thirds of a million storm events, many of which have no impact on the questions we are looking to answer. The impact filter eliminates more than two thirds of the storm events in the 15 year period, but still leaves a bit over 200,000 storm events, all of which have a bearing on the two questions.</p>
+<pre class="r"><code># read in only the variables we're interested in and only the data after the new
+# stardard has gone into effect and that has an impact on the questions
 # Ignoring the early data removes the most noise and about a third of the data 
 storm_data &lt;- tbl_df(read.csv(storm_data_bz2, 
                               stringsAsFactors=FALSE, 
+                              # filter the fields
                               colClasses = header_char_classes))  %&gt;% 
+              # filter by date
               mutate(BGN_DATE =  mdy_hms(BGN_DATE)) %&gt;% 
-              filter(BGN_DATE &gt;= &quot;1996-01-01&quot;)</code></pre>
-<p>This still leaves us with nearly two thirds of a million storm events, many of which have no impact on the questions we are looking to answer. The following code block corrects the data types and filters out storm events that were reported to have no financial or health impact. This eliminates more than two thirds of the storm events in the 15 year period, but still leaves a bit over 200,000 storm events, all of which have a bearing on our two questions.</p>
-<pre class="r"><code># coerce the numeric data to be the correct type
-storm_data &lt;- storm_data %&gt;% 
+              filter(BGN_DATE &gt;= &quot;1996-01-01&quot;) %&gt;%
+              # coerce the numeric data to be the correct type
               mutate(FATALITIES = as.integer(FATALITIES),
                      INJURIES = as.integer(INJURIES),
                      PROPDMG = as.numeric(PROPDMG),
                      CROPDMG = as.numeric(CROPDMG),
-                     REFNUM = as.integer(REFNUM))
-# finally keep only the storm data that can affect the questions; this removes
-# about two thirds of the remaining data, none of which helps answer the questions
-# since we're looking at totals, not averages
-storm_data &lt;- storm_data %&gt;% 
+                     REFNUM = as.integer(REFNUM)) %&gt;%
+              # finally keep only the storm data that can affect the questions; this removes
+              # about two thirds of the remaining data, none of which helps answer the questions
+              # since we're looking at totals, not averages
               filter(FATALITIES &gt; 0 | INJURIES &gt; 0 | PROPDMG &gt; 0 | CROPDMG &gt; 0)</code></pre>
 <p>In a first look at the storm data, we can see the storm event types do not always align with the standard event names.</p>
 <pre class="r"><code># read in the standard event types used starting 1996
@@ -165,8 +167,9 @@ standard_events &lt;- read.csv(storm_data_events_file, comment.char = &quot;#&qu
 
 # and from our storm data
 storm_data_events &lt;- unique(storm_data$EVTYPE)</code></pre>
-<p>The storm data contains <strong>222</strong> unique storm event types in contrast to the 48 standard event types. It would greatly simplfy the analysis if the 222 unique storm event types could be grouped into the 48 standard event types. Since we’re dealing with 201313 storm events, it is obvious that we’ll need some tools to help with the analysis. These functions were useful in exploring and cleaning the storm data.</p>
-<pre class="r"><code># define a function to aid in generating regexps to group events into std types
+<p>The storm data contains <strong>222</strong> unique storm event types in contrast to the 48 standard event types. It would greatly simplify the analysis if the 222 unique storm event types could be grouped into the 48 standard event types. Since the filtered data contains 201313 storm events, it is obvious that we’ll need some tools to help with the analysis. These functions were useful in exploring and cleaning the storm data.</p>
+<pre class="r"><code># define a function to select storm events from the data set based on regular expressions
+# this aids in generating regexps to group events into std types
 get_event &lt;- function(src, pattern) {
                unique(grep(pattern, 
                            src, 
@@ -195,7 +198,7 @@ replace_event_wo &lt;- function(src, pattern, exclude, replacement) {
                           !grepl(exclude, src$EVTYPE, ignore.case = TRUE)
                    src[idx, &quot;EVTYPE&quot;] &lt;- replacement
                    src}</code></pre>
-<p>Using these functions we can map the storm data events into standard events.</p>
+<p>Using these functions the storm data events can be mapped into the standard events.</p>
 <pre class="r"><code># Use regular expressions to map the dirty event type fields into standard names
 storm_data &lt;- select(storm_data, c(1:8,10)) %&gt;% 
   replace_event(&quot;^Astronomical Low Tide&quot;, 
@@ -268,11 +271,13 @@ storm_data &lt;- select(storm_data, c(1:8,10)) %&gt;%
                    &quot;heavy|excessive|lake&quot;, 
                    &quot;Winter Weather&quot;) %&gt;%
   replace_event(&quot;other|marine accident|drowning&quot;, &quot;Other&quot;) %&gt;%
-  mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))</code></pre>
+  mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))
+
+other_events &lt;- storm_data$EVTYPE[storm_data$EVTYPE == &quot;Other&quot;]</code></pre>
 </div>
 <div id="results" class="section level2">
 <h2>Results</h2>
-<p>Having mapped the storm event data into standard type names, we can see the frequency of each of the types of events. Note that there are 49 event types in our data. The extra “Other” catagory is the catchall for those 36 events that were reported, but did not seem to fall into one of the standard types. “Other” includes these event types: “Other”, “Marine Accident”, and “Drowning”. Thunderstorm Wind is the most common event by an order of magnitude.</p>
+<p>Having mapped the storm event data into standard type names, we can see the frequency of each of the types of events. Note that there are 49 event types in our data. The extra “Other” category is the catchall for those 36 events that were reported, but did not seem to fall into one of the standard types. “Other” includes these event types: “Other”, “Marine Accident”, and “Drowning”. Thunderstorm Wind is the most common event by an order of magnitude.</p>
 <pre class="r"><code># Show the table of counts of all event types
 table(storm_data$EVTYPE)</code></pre>
 <pre><code>## 
@@ -356,7 +361,7 @@ plot_grid(ttfp, ttip, nrow = 2)</code></pre>
 </div>
 <div id="financial-impacts" class="section level3">
 <h3>Financial Impacts</h3>
-<p>Here are the top ten storm event types that have a financial impact, broken out by crop damage and property damage.</p>
+<p>Here are the top ten storm event types that have a financial impact, broken out by property damage and crop damage.</p>
 <pre class="r"><code># Apply the exponents to the damage costs, then total by event types
 # What is the multiplier of the EXP variables
 ## Convert to billions of dollars
