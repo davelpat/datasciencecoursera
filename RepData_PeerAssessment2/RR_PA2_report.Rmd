@@ -1,31 +1,33 @@
 ---
 title: "Financial and Health Impacts of U.S. Storms From 1996 Through 2011"
 author: "Dave Patterson"
-date: "September 19, 2015"
+date: "November 5, 2015"
 output: 
   html_document: 
     keep_md: yes
 ---
 
 ## Synopsis
-The purpose of this report is to explore the NOAA Storm Database and analyze the types of 
-storm events to understand  
+The purpose of this report is to explore the NOAA Storm Database and analyze the
+types of storm events to understand
 1. which are most harmful with respect to population health and  
 2. which have the greatest economic consequences?  
-This analysis should help to prioritize resources to prepare for severe weather events.
+This analysis should help to prioritize resources to prepare for severe weather
+events.
 
-Prior to 1996, there was no standard classification of storm types. Effective beginning in 1996, 
-storm events were grouped into 48 standard event types. Prior to that, the storm data was 
-both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996
-in comparison to today was significantly great enough to potentially skew the data. 
-For these reasons, we will only work with the last 15 years of the data available. 
+Prior to 1996, there was no standard classification of storm types. Effective
+beginning in 1996, storm events were grouped into 48 standard event types. Prior
+to that, the storm data was both sparse and inconsistent. In addition, due to
+inflation, the value of money prior to 1996 in comparison to today was
+significantly great enough to potentially skew the data. For these reasons, we
+will only work with the last 15 years of the data available.
 
 ## Data Processing
 
-A copy of the United States National Oceanic and Atmospheric Administration's (NOAA) 
-storm database was downloaded from the John Hopkins Data Science Coursera course 
-repository for all the storms in the United States from 1950 through 2011. 
-The data was downloaded September 19, 2015.
+A copy of the United States National Oceanic and Atmospheric Administration's 
+(NOAA) storm database was downloaded from the John Hopkins Data Science Coursera
+course repository for all the storms in the United States from 1950 through 
+2011. The data was downloaded September 19, 2015.
 
 ```{r load libs}
 packages <- c("data.table", "dplyr", "lubridate", "stringr", "ggplot2", "cowplot")
@@ -34,28 +36,31 @@ sapply(packages, require, character.only = TRUE, quietly = TRUE, warn.conflicts 
 
 ```{r get files}
 original.data  <- "http://www.ncdc.noaa.gov/stormevents/details.jsp"
-storm.data.url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
-storm.data.doc <- "http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"
-storm.data.faq <- "http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf"
+repo.host      <- "http://d396qusza40orc.cloudfront.net/repdata%2F"
+storm.data.url <- paste0(repo.host, "data%2FStormData.csv.bz2")
+storm.data.doc <- paste0(repo.host, "peer2_doc%2Fpd01016005curr.pdf")
+storm.data.faq <- paste0(repo.host, "peer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf")
 storm.data.bz2 <- "StormData.csv.bz2"
 storm.data.events.file <- "StormDataEventTable.csv"
 
 # if the data file is not already present, get the source data file
-if(!(file.exists(storm.data.bz2))) {download.file(storm.data.url, destfile = storm.data.bz2)}
+if(!(file.exists(storm.data.bz2))) {
+  download.file(storm.data.url, destfile = storm.data.bz2)
+}
 ```
 
-Given the large volume of data 
-(over 900,000 storm events), we only read in the data needed to answer the two questions 
-of interest. This will eliminate two thirds of the data fields and simplify, 
-as well as speed up, the processing of the data. In the list below, "NULL" indicates 
-that data field is ignored in this analysis.
+Given the large volume of data (over 900,000 storm events), we only read in the
+data needed to answer the two questions of interest. This will eliminate two
+thirds of the data fields and simplify, as well as speed up, the processing of
+the data. In the list below, "NULL" indicates that data field is ignored in this
+analysis.
 
 ```{r select variables}
 # grab the headers
 storm.data.headers <- names(read.csv(storm.data.bz2, header = TRUE, nrow = 1))
-# create a vector to ignore most of the variables when we read them in since we're not
-# interested in most of them -- only in data the can affect the answers
-# i.e. storm data that impacts health or property
+# create a vector to ignore most of the variables when we read them in since
+# we're not interested in most of them -- only in data the can affect the
+# answers i.e. storm data that impacts health or property
 header.char.classes <- rep("NULL", 37)
 # set the variables we are interested in to type char so they read in quickly
 header.char.classes[c(2,8,23:28,36:37)] <- "character"
@@ -65,18 +70,20 @@ cbind(storm.data.headers, header.char.classes)
 
 The data is loaded and prepared for analysis. Three levels of filters applied:
 1. Date: only the storm data collected after January 1, 1996 is used
-2. Fields: only the fields needed to answer the questions, as shown in the table above, is used
+2. Fields: only the fields needed to answer the questions, as shown in the table
+above, is used
 3. Impact: only storm events that had a health or financial impact is used
 
-The date filter still leaves nearly two thirds of a million storm events, many of which 
-have no impact on the questions we are looking to answer. The impact filter eliminates 
-more than two thirds of the storm events in the 15 year period, but still leaves a bit 
-over 200,000 storm events, all of which have a bearing on the two questions.
+The date filter still leaves nearly two thirds of a million storm events, many
+of which have no impact on the questions we are looking to answer. The impact
+filter eliminates more than two thirds of the storm events in the 15 year
+period, but still leaves a bit over 200,000 storm events, all of which have a
+bearing on the two questions.
 
 ```{r read and filter data, cache=TRUE}
 # read in only the variables we're interested in and only the data after the new
-# stardard has gone into effect and that has an impact on the questions
-# Ignoring the early data removes the most noise and about a third of the data 
+# stardard has gone into effect and that has an impact on the questions Ignoring
+# the early data removes the most noise and about a third of the data
 storm.data <- tbl_df(read.csv(storm.data.bz2, 
                               stringsAsFactors=FALSE, 
                               # filter the fields
@@ -90,14 +97,15 @@ storm.data <- tbl_df(read.csv(storm.data.bz2,
                      PROPDMG = as.numeric(PROPDMG),
                      CROPDMG = as.numeric(CROPDMG),
                      REFNUM = as.integer(REFNUM)) %>%
-              # finally keep only the storm data that can affect the questions; this removes
-              # about two thirds of the remaining data, none of which helps answer the questions
-              # since we're looking at totals, not averages
+              # finally keep only the storm data that can affect the questions;
+              # this removes about two thirds of the remaining data, none of
+              # which helps answer the questions since we're looking at totals,
+              # not averages
               filter(FATALITIES > 0 | INJURIES > 0 | PROPDMG > 0 | CROPDMG > 0)
 ```
 
-In a first look at the storm data, we can see the storm event types do not always align 
-with the standard event names.
+In a first look at the storm data, we can see the storm event types do not
+always align with the standard event names.
 
 ```{r event names}
 # read in the standard event types used starting 1996
@@ -110,16 +118,18 @@ standard_events <- read.csv(storm.data.events.file,
 storm.data.events <- unique(storm.data$EVTYPE)
 ```
 
-The storm data contains **`r length(storm.data.events)`** unique storm event types in contrast 
-to the `r length(standard_events$Event.Name)` standard event types. It would greatly simplify the
-analysis if the `r length(storm.data.events)` unique storm event types could be grouped into the
-`r length(standard_events$Event.Name)` standard event types. Since the filtered data contains 
-`r length(storm.data$EVTYPE)` storm events, it is obvious that we'll need some tools to help with 
-the analysis. These functions were useful in exploring and cleaning the storm data.
+The storm data contains **`r length(storm.data.events)`** unique storm event
+types in contrast to the `r length(standard_events$Event.Name)` standard event
+types. It would greatly simplify the analysis if the 
+`r length(storm.data.events)` unique storm event types could be grouped into the
+`r length(standard_events$Event.Name)` standard event types. Since the filtered
+data contains `r length(storm.data$EVTYPE)` storm events, it is obvious that
+we'll need some tools to help with the analysis. These functions were useful in
+exploring and cleaning the storm data.
 
 ```{r useful functions}
-# define a function to select storm events from the data set based on regular expressions
-# this aids in generating regexps to group events into std types
+# define a function to select storm events from the data set based on regular
+# expressions this aids in generating regexps to group events into std types
 get_event <- function(src, pattern) {
   unique(grep(pattern, src, ignore.case = TRUE, value = TRUE))
 }
@@ -139,7 +149,7 @@ replace_event <- function(src, pattern, replacement) {
   src
 }
 
-# define a function to replace the dirty event types with standard names while
+# define a function to replace the dirty event types with standard names while 
 # excluding a specific phrase or word
 # NOTE that argument order is set to allow pipelining
 replace_event_wo <- function(src, pattern, exclude, replacement) {
@@ -151,7 +161,8 @@ replace_event_wo <- function(src, pattern, exclude, replacement) {
 
 ```
 
-Using these functions the storm data events can be mapped into the standard events.
+Using these functions the storm data events can be mapped into the standard
+events.
 
 ```{r map events, cache=TRUE}
 # Use regular expressions to map the dirty event type fields into standard names
@@ -233,12 +244,12 @@ other_events <- storm.data$EVTYPE[storm.data$EVTYPE == "Other"]
 
 ## Results
 
-Having mapped the storm event data into standard type names, we can see the frequency of 
-each of the types of events. Note that there are `r length(unique(storm.data$EVTYPE))` 
-event types in our data. The extra "Other" category is the catchall for those 
-`r length(other_events)` events that were reported, but did not seem to 
-fall into one of the standard types. 
-"Other" includes these event types: "Other", "Marine Accident", and "Drowning". 
+Having mapped the storm event data into standard type names, we can see the 
+frequency of each of the types of events. Note that there are
+`r length(unique(storm.data$EVTYPE))` event types in our data. The extra "Other"
+category is the catchall for those `r length(other_events)` events that were 
+reported, but did not seem to fall into one of the standard types. "Other" 
+includes these event types: "Other", "Marine Accident", and "Drowning". 
 Thunderstorm Wind is the most common event by an order of magnitude.
 
 ```{r type table, cache=TRUE}
@@ -246,9 +257,10 @@ Thunderstorm Wind is the most common event by an order of magnitude.
 # Show the table of counts of all event types
 table(storm.data$EVTYPE)
 
-# function to plot horizontal barchart of top ten events most impactful events for an impact
-# evdata should be a "tbl_df" of ten rows, with the name of the storm event as the first column
-# and the count of the impact (frequency, fatalities, injuries, or damage) as the second column
+# function to plot horizontal barchart of top ten events most impactful events
+# for an impact evdata should be a "tbl_df" of ten rows, with the name of the
+# storm event as the first column and the count of the impact (frequency,
+# fatalities, injuries, or damage) as the second column
 tt_plot <- function(evdata, title, cnt_label) {
   evdata %>% 
   setnames(c("Event", "Count")) %>%
@@ -278,8 +290,8 @@ tt_plot(tte, "Top Ten Most Frequent Events", "Occurrences")
 
 ### Health Impacts
 
-Here are the top ten storm event types that have an impact on public health, broken out by 
-Fatalities and Injuries.
+Here are the top ten storm event types that have an impact on public health,
+broken out by Fatalities and Injuries.
 
 ```{r health impact, cache=TRUE}
 
@@ -301,8 +313,8 @@ plot_grid(ttfp, ttip, nrow = 2)
 
 ### Financial Impacts
 
-Here are the top ten storm event types that have a financial impact, broken out by 
-property damage and crop damage.
+Here are the top ten storm event types that have a financial impact, broken out
+by property damage and crop damage.
 
 ```{r financial impact, cache=TRUE}
 
@@ -327,13 +339,17 @@ storm.data <- storm.data %>%
 ttp <- tbl_df(aggregate(PROPDMGNORM ~ EVTYPE, storm.data, sum)) %>% 
        arrange(desc(PROPDMGNORM)) %>% 
        head(10)
-ttpp <- tt_plot(ttp, "Top Ten Events Causing the Most Property Damage", "Billions of Dollars Damage")
+ttpp <- tt_plot(ttp, 
+                "Top Ten Events Causing the Most Property Damage", 
+                "Billions of Dollars Damage")
 
 # top ten events causing the most crop damage
 ttc <- tbl_df(aggregate(CROPDMGNORM ~ EVTYPE, storm.data, sum)) %>% 
        arrange(desc(CROPDMGNORM)) %>% 
        head(10)
-ttcp <- tt_plot(ttc, "Top Ten Events Causing the Most Crop Damage", "Billions of Dollars Damage")
+ttcp <- tt_plot(ttc, 
+                "Top Ten Events Causing the Most Crop Damage", 
+                "Billions of Dollars Damage")
 
 # Print both graphs as a single plot
 plot_grid(ttpp, ttcp, nrow = 2)

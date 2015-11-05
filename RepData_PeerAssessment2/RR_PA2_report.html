@@ -10,7 +10,6 @@
 
 <meta name="author" content="Dave Patterson" />
 
-<meta name="date" content="2015-09-19" />
 
 <title>Financial and Health Impacts of U.S. Storms From 1996 Through 2011</title>
 
@@ -64,13 +63,13 @@ img {
 <div id="header">
 <h1 class="title">Financial and Health Impacts of U.S. Storms From 1996 Through 2011</h1>
 <h4 class="author"><em>Dave Patterson</em></h4>
-<h4 class="date"><em>September 19, 2015</em></h4>
+<h4 class="date"><em>November 5, 2015</em></h4>
 </div>
 
 
 <div id="synopsis" class="section level2">
 <h2>Synopsis</h2>
-<p>The purpose of this report is to explore the NOAA Storm Database and analyze the types of storm events to understand<br />1. which are most harmful with respect to population health and<br />2. which have the greatest economic consequences?<br />This analysis should help to prioritize resources to prepare for severe weather events.</p>
+<p>The purpose of this report is to explore the NOAA Storm Database and analyze the types of storm events to understand 1. which are most harmful with respect to population health and<br />2. which have the greatest economic consequences?<br />This analysis should help to prioritize resources to prepare for severe weather events.</p>
 <p>Prior to 1996, there was no standard classification of storm types. Effective beginning in 1996, storm events were grouped into 48 standard event types. Prior to that, the storm data was both sparse and inconsistent. In addition, due to inflation, the value of money prior to 1996 in comparison to today was significantly great enough to potentially skew the data. For these reasons, we will only work with the last 15 years of the data available.</p>
 </div>
 <div id="data-processing" class="section level2">
@@ -80,27 +79,30 @@ img {
 sapply(packages, require, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)</code></pre>
 <pre><code>## data.table      dplyr  lubridate    stringr    ggplot2    cowplot 
 ##       TRUE       TRUE       TRUE       TRUE       TRUE       TRUE</code></pre>
-<pre class="r"><code>original_data  &lt;- &quot;http://www.ncdc.noaa.gov/stormevents/details.jsp&quot;
-storm_data_url &lt;- &quot;http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2&quot;
-storm_data_doc &lt;- &quot;http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf&quot;
-storm_data_faq &lt;- &quot;http://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf&quot;
-storm_data_bz2 &lt;- &quot;StormData.csv.bz2&quot;
-storm_data_events_file &lt;- &quot;StormDataEventTable.csv&quot;
+<pre class="r"><code>original.data  &lt;- &quot;http://www.ncdc.noaa.gov/stormevents/details.jsp&quot;
+repo.host      &lt;- &quot;http://d396qusza40orc.cloudfront.net/repdata%2F&quot;
+storm.data.url &lt;- paste0(repo.host, &quot;data%2FStormData.csv.bz2&quot;)
+storm.data.doc &lt;- paste0(repo.host, &quot;peer2_doc%2Fpd01016005curr.pdf&quot;)
+storm.data.faq &lt;- paste0(repo.host, &quot;peer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf&quot;)
+storm.data.bz2 &lt;- &quot;StormData.csv.bz2&quot;
+storm.data.events.file &lt;- &quot;StormDataEventTable.csv&quot;
 
 # if the data file is not already present, get the source data file
-if(!(file.exists(storm_data_bz2))) {download.file(storm_data_url, destfile = storm_data_bz2)}</code></pre>
+if(!(file.exists(storm.data.bz2))) {
+  download.file(storm.data.url, destfile = storm.data.bz2)
+}</code></pre>
 <p>Given the large volume of data (over 900,000 storm events), we only read in the data needed to answer the two questions of interest. This will eliminate two thirds of the data fields and simplify, as well as speed up, the processing of the data. In the list below, “NULL” indicates that data field is ignored in this analysis.</p>
 <pre class="r"><code># grab the headers
-storm_data_headers &lt;- names(read.csv(storm_data_bz2, header = T, nrow = 1))
-# create a vector to ignore most of the variables when we read them in since we're not
-# interested in most of them -- only in data the can affect the answers
-# i.e. storm data that impacts health or property
-header_char_classes &lt;- rep(&quot;NULL&quot;, 37)
+storm.data.headers &lt;- names(read.csv(storm.data.bz2, header = TRUE, nrow = 1))
+# create a vector to ignore most of the variables when we read them in since
+# we're not interested in most of them -- only in data the can affect the
+# answers i.e. storm data that impacts health or property
+header.char.classes &lt;- rep(&quot;NULL&quot;, 37)
 # set the variables we are interested in to type char so they read in quickly
-header_char_classes[c(2,8,23:28,36:37)] &lt;- &quot;character&quot;
+header.char.classes[c(2,8,23:28,36:37)] &lt;- &quot;character&quot;
 # verify the mapping
-cbind(storm_data_headers, header_char_classes)</code></pre>
-<pre><code>##       storm_data_headers header_char_classes
+cbind(storm.data.headers, header.char.classes)</code></pre>
+<pre><code>##       storm.data.headers header.char.classes
 ##  [1,] &quot;STATE__&quot;          &quot;NULL&quot;             
 ##  [2,] &quot;BGN_DATE&quot;         &quot;character&quot;        
 ##  [3,] &quot;BGN_TIME&quot;         &quot;NULL&quot;             
@@ -141,12 +143,12 @@ cbind(storm_data_headers, header_char_classes)</code></pre>
 <p>The data is loaded and prepared for analysis. Three levels of filters applied: 1. Date: only the storm data collected after January 1, 1996 is used 2. Fields: only the fields needed to answer the questions, as shown in the table above, is used 3. Impact: only storm events that had a health or financial impact is used</p>
 <p>The date filter still leaves nearly two thirds of a million storm events, many of which have no impact on the questions we are looking to answer. The impact filter eliminates more than two thirds of the storm events in the 15 year period, but still leaves a bit over 200,000 storm events, all of which have a bearing on the two questions.</p>
 <pre class="r"><code># read in only the variables we're interested in and only the data after the new
-# stardard has gone into effect and that has an impact on the questions
-# Ignoring the early data removes the most noise and about a third of the data 
-storm_data &lt;- tbl_df(read.csv(storm_data_bz2, 
+# stardard has gone into effect and that has an impact on the questions Ignoring
+# the early data removes the most noise and about a third of the data
+storm.data &lt;- tbl_df(read.csv(storm.data.bz2, 
                               stringsAsFactors=FALSE, 
                               # filter the fields
-                              colClasses = header_char_classes))  %&gt;% 
+                              colClasses = header.char.classes))  %&gt;% 
               # filter by date
               mutate(BGN_DATE =  mdy_hms(BGN_DATE)) %&gt;% 
               filter(BGN_DATE &gt;= &quot;1996-01-01&quot;) %&gt;%
@@ -156,51 +158,54 @@ storm_data &lt;- tbl_df(read.csv(storm_data_bz2,
                      PROPDMG = as.numeric(PROPDMG),
                      CROPDMG = as.numeric(CROPDMG),
                      REFNUM = as.integer(REFNUM)) %&gt;%
-              # finally keep only the storm data that can affect the questions; this removes
-              # about two thirds of the remaining data, none of which helps answer the questions
-              # since we're looking at totals, not averages
+              # finally keep only the storm data that can affect the questions;
+              # this removes about two thirds of the remaining data, none of
+              # which helps answer the questions since we're looking at totals,
+              # not averages
               filter(FATALITIES &gt; 0 | INJURIES &gt; 0 | PROPDMG &gt; 0 | CROPDMG &gt; 0)</code></pre>
 <p>In a first look at the storm data, we can see the storm event types do not always align with the standard event names.</p>
 <pre class="r"><code># read in the standard event types used starting 1996
-# extracted from storm_data_doc file (Table 1. Storm Data Event Table)
-standard_events &lt;- read.csv(storm_data_events_file, comment.char = &quot;#&quot;, stringsAsFactors = FALSE)
+# extracted from storm.data.doc file (Table 1. Storm Data Event Table)
+standard_events &lt;- read.csv(storm.data.events.file, 
+                            comment.char = &quot;#&quot;, 
+                            stringsAsFactors = FALSE)
 
 # and from our storm data
-storm_data_events &lt;- unique(storm_data$EVTYPE)</code></pre>
+storm.data.events &lt;- unique(storm.data$EVTYPE)</code></pre>
 <p>The storm data contains <strong>222</strong> unique storm event types in contrast to the 48 standard event types. It would greatly simplify the analysis if the 222 unique storm event types could be grouped into the 48 standard event types. Since the filtered data contains 201313 storm events, it is obvious that we’ll need some tools to help with the analysis. These functions were useful in exploring and cleaning the storm data.</p>
-<pre class="r"><code># define a function to select storm events from the data set based on regular expressions
-# this aids in generating regexps to group events into std types
+<pre class="r"><code># define a function to select storm events from the data set based on regular
+# expressions this aids in generating regexps to group events into std types
 get_event &lt;- function(src, pattern) {
-               unique(grep(pattern, 
-                           src, 
-                           ignore.case = TRUE, 
-                           value = TRUE))}
+  unique(grep(pattern, src, ignore.case = TRUE, value = TRUE))
+}
 # and an example call
 # get_event(events, &quot;^\\s*(tstm|thunder)&quot;)
 
 # define a function to get the remarks for a specific storm reference
 get_remarks_for &lt;- function(ref) {
-  storm_data[(storm_data$REFNUM == ref),&quot;REMARKS&quot;]
+  storm.data[(storm.data$REFNUM == ref),&quot;REMARKS&quot;]
 }
 
 # define a function to replace the dirty event types with standard names
 # NOTE that argument order is set to allow pipelining
 replace_event &lt;- function(src, pattern, replacement) {
-                   idx &lt;- grepl(pattern, src$EVTYPE, ignore.case = TRUE)
-                   src[idx, &quot;EVTYPE&quot;] &lt;- replacement
-                   src}
+  idx &lt;- grepl(pattern, src$EVTYPE, ignore.case = TRUE)
+  src[idx, &quot;EVTYPE&quot;] &lt;- replacement
+  src
+}
 
-# define a function to replace the dirty event types with standard names while
+# define a function to replace the dirty event types with standard names while 
 # excluding a specific phrase or word
 # NOTE that argument order is set to allow pipelining
 replace_event_wo &lt;- function(src, pattern, exclude, replacement) {
-                   idx &lt;- grepl(pattern, src$EVTYPE, ignore.case = TRUE) &amp;
-                          !grepl(exclude, src$EVTYPE, ignore.case = TRUE)
-                   src[idx, &quot;EVTYPE&quot;] &lt;- replacement
-                   src}</code></pre>
+  idx &lt;- grepl(pattern, src$EVTYPE, ignore.case = TRUE) &amp;
+         !grepl(exclude, src$EVTYPE, ignore.case = TRUE)
+  src[idx, &quot;EVTYPE&quot;] &lt;- replacement
+  src
+}</code></pre>
 <p>Using these functions the storm data events can be mapped into the standard events.</p>
 <pre class="r"><code># Use regular expressions to map the dirty event type fields into standard names
-storm_data &lt;- select(storm_data, c(1:8,10)) %&gt;% 
+storm.data &lt;- select(storm.data, c(1:8,10)) %&gt;% 
   replace_event(&quot;^Astronomical Low Tide&quot;, 
                 &quot;Astronomical Low Tide&quot;) %&gt;%
   replace_event(&quot;(coast|cstl|beach).*(flood|erosion)&quot;, 
@@ -273,13 +278,13 @@ storm_data &lt;- select(storm_data, c(1:8,10)) %&gt;%
   replace_event(&quot;other|marine accident|drowning&quot;, &quot;Other&quot;) %&gt;%
   mutate(EVTYPE = as.factor(str_to_title(EVTYPE)))
 
-other_events &lt;- storm_data$EVTYPE[storm_data$EVTYPE == &quot;Other&quot;]</code></pre>
+other_events &lt;- storm.data$EVTYPE[storm.data$EVTYPE == &quot;Other&quot;]</code></pre>
 </div>
 <div id="results" class="section level2">
 <h2>Results</h2>
 <p>Having mapped the storm event data into standard type names, we can see the frequency of each of the types of events. Note that there are 49 event types in our data. The extra “Other” category is the catchall for those 36 events that were reported, but did not seem to fall into one of the standard types. “Other” includes these event types: “Other”, “Marine Accident”, and “Drowning”. Thunderstorm Wind is the most common event by an order of magnitude.</p>
 <pre class="r"><code># Show the table of counts of all event types
-table(storm_data$EVTYPE)</code></pre>
+table(storm.data$EVTYPE)</code></pre>
 <pre><code>## 
 ##    Astronomical Low Tide                Avalanche                 Blizzard 
 ##                        2                      264                      228 
@@ -315,28 +320,32 @@ table(storm_data$EVTYPE)</code></pre>
 ##                       29                     1229                     1459 
 ##           Winter Weather 
 ##                      734</code></pre>
-<pre class="r"><code># function to plot horizontal barchart of top ten events most impactful events for an impact
-# evdata should be a &quot;tbl_df&quot; of ten rows, with the name of the storm event as the first column
-# and the count of the impact (frequency, fatalities, injuries, or damage) as the second column
+<pre class="r"><code># function to plot horizontal barchart of top ten events most impactful events
+# for an impact evdata should be a &quot;tbl_df&quot; of ten rows, with the name of the
+# storm event as the first column and the count of the impact (frequency,
+# fatalities, injuries, or damage) as the second column
 tt_plot &lt;- function(evdata, title, cnt_label) {
   evdata %&gt;% 
-    setnames(c(&quot;Event&quot;, &quot;Count&quot;)) %&gt;%
-    mutate(Event = factor(as.character(Event), levels=Event)) %&gt;%
-    ggplot(aes(x = desc(Event),
-               y = Count, 
-               fill = Event)) +
-           geom_bar(stat=&quot;identity&quot;) + 
-           scale_x_continuous(breaks=(-1:-10), labels=evdata$Event) +
-           guides(fill=FALSE) + 
-           ggtitle(title) +
-           ylab(cnt_label) +
-           coord_flip() +
-           theme_bw() +
-           theme(axis.title.y = element_blank())
+  setnames(c(&quot;Event&quot;, &quot;Count&quot;)) %&gt;%
+  mutate(Event = factor(as.character(Event), 
+                        levels=Event)) %&gt;%
+  ggplot(aes(x = desc(Event),
+             y = Count, 
+             fill = Event)) +
+         geom_bar(stat=&quot;identity&quot;) + 
+         scale_x_continuous(breaks = (-1:-10), 
+                            labels = evdata$Event) +
+         guides(fill=FALSE) + 
+         ggtitle(title) +
+         ylab(cnt_label) +
+         coord_flip() +
+         theme_bw() +
+         theme(axis.title.y = element_blank())
 }
 
 # Plot the ten most frequent events (tte = top ten events)
-tte &lt;- head(sort(table(storm_data$EVTYPE), decreasing = TRUE), 10) %&gt;% 
+tte &lt;- head(sort(table(storm.data$EVTYPE), 
+                 decreasing = TRUE), 10) %&gt;% 
        as.data.table(keep.rownames = TRUE)
 tt_plot(tte, &quot;Top Ten Most Frequent Events&quot;, &quot;Occurrences&quot;)</code></pre>
 <p><img src="data:image/png;base64,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" /></p>
@@ -344,15 +353,15 @@ tt_plot(tte, &quot;Top Ten Most Frequent Events&quot;, &quot;Occurrences&quot;)<
 <h3>Health Impacts</h3>
 <p>Here are the top ten storm event types that have an impact on public health, broken out by Fatalities and Injuries.</p>
 <pre class="r"><code># top ten events causing the most fatalities
-ttf &lt;- tbl_df(aggregate(FATALITIES ~ EVTYPE, storm_data, sum)) %&gt;% 
-    arrange(desc(FATALITIES)) %&gt;% 
-    head(10)
+ttf &lt;- tbl_df(aggregate(FATALITIES ~ EVTYPE, storm.data, sum)) %&gt;% 
+       arrange(desc(FATALITIES)) %&gt;% 
+       head(10)
 ttfp &lt;- tt_plot(ttf, &quot;Top Ten Most Fatal Events&quot;, &quot;Fatalities&quot;)
 
 # top ten events causing the most injuries
-tti &lt;- tbl_df(aggregate(INJURIES ~ EVTYPE, storm_data, sum)) %&gt;% 
-    arrange(desc(INJURIES)) %&gt;% 
-    head(10)
+tti &lt;- tbl_df(aggregate(INJURIES ~ EVTYPE, storm.data, sum)) %&gt;% 
+       arrange(desc(INJURIES)) %&gt;% 
+       head(10)
 ttip &lt;- tt_plot(tti, &quot;Top Ten Most Injurious Events&quot;, &quot;Injuries&quot;)
 
 # Print both graphs as a single plot
@@ -366,28 +375,34 @@ plot_grid(ttfp, ttip, nrow = 2)</code></pre>
 # What is the multiplier of the EXP variables
 ## Convert to billions of dollars
 get_exp_val &lt;- function (exp_var) {
-  switch(exp_var, &quot;K&quot; = 10^-6,
-                  &quot;M&quot; = 10^-3,
-                  &quot;B&quot; = 1,
-                  10^-9)}
+  switch(exp_var, 
+         &quot;K&quot; = 10^-6,
+         &quot;M&quot; = 10^-3,
+         &quot;B&quot; = 1,
+         10^-9)
+}
 
 # normalize the asset damage
-storm_data &lt;- storm_data %&gt;%
-       mutate(PROPDMGNORM = PROPDMG * sapply(PROPDMGEXP, get_exp_val)) %&gt;%
-       mutate(CROPDMGNORM = CROPDMG * sapply(CROPDMGEXP, get_exp_val)) %&gt;%
-       group_by(EVTYPE)
+storm.data &lt;- storm.data %&gt;%
+              mutate(PROPDMGNORM = PROPDMG * sapply(PROPDMGEXP, get_exp_val)) %&gt;%
+              mutate(CROPDMGNORM = CROPDMG * sapply(CROPDMGEXP, get_exp_val)) %&gt;%
+              group_by(EVTYPE)
 
 # top ten events causing the most property damage
-ttp &lt;- tbl_df(aggregate(PROPDMGNORM ~ EVTYPE, storm_data, sum)) %&gt;% 
-    arrange(desc(PROPDMGNORM)) %&gt;% 
-    head(10)
-ttpp &lt;- tt_plot(ttp, &quot;Top Ten Events Causing the Most Property Damage&quot;, &quot;Billions of Dollars Damage&quot;)
+ttp &lt;- tbl_df(aggregate(PROPDMGNORM ~ EVTYPE, storm.data, sum)) %&gt;% 
+       arrange(desc(PROPDMGNORM)) %&gt;% 
+       head(10)
+ttpp &lt;- tt_plot(ttp, 
+                &quot;Top Ten Events Causing the Most Property Damage&quot;, 
+                &quot;Billions of Dollars Damage&quot;)
 
 # top ten events causing the most crop damage
-ttc &lt;- tbl_df(aggregate(CROPDMGNORM ~ EVTYPE, storm_data, sum)) %&gt;% 
-    arrange(desc(CROPDMGNORM)) %&gt;% 
-    head(10)
-ttcp &lt;- tt_plot(ttc, &quot;Top Ten Events Causing the Most Crop Damage&quot;, &quot;Billions of Dollars Damage&quot;)
+ttc &lt;- tbl_df(aggregate(CROPDMGNORM ~ EVTYPE, storm.data, sum)) %&gt;% 
+       arrange(desc(CROPDMGNORM)) %&gt;% 
+       head(10)
+ttcp &lt;- tt_plot(ttc, 
+                &quot;Top Ten Events Causing the Most Crop Damage&quot;, 
+                &quot;Billions of Dollars Damage&quot;)
 
 # Print both graphs as a single plot
 plot_grid(ttpp, ttcp, nrow = 2)</code></pre>
