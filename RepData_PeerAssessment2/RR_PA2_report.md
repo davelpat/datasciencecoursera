@@ -1,10 +1,10 @@
 # Financial and Health Impacts of U.S. Storms From 1996 Through 2011
 Dave Patterson  
-November 5, 2015  
+November 16, 2015  
 
 ## Synopsis
 The purpose of this report is to explore the NOAA Storm Database and analyze the
-types of storm events to understand
+types of storm events to understand  
 1. which are most harmful with respect to population health and  
 2. which have the greatest economic consequences?  
 This analysis should help to prioritize resources to prepare for severe weather
@@ -38,10 +38,10 @@ sapply(packages, require, character.only = TRUE, quietly = TRUE, warn.conflicts 
 
 ```r
 original.data  <- "http://www.ncdc.noaa.gov/stormevents/details.jsp"
-repo.host      <- "http://d396qusza40orc.cloudfront.net/repdata%2F"
-storm.data.url <- paste0(repo.host, "data%2FStormData.csv.bz2")
-storm.data.doc <- paste0(repo.host, "peer2_doc%2Fpd01016005curr.pdf")
-storm.data.faq <- paste0(repo.host, "peer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf")
+repo.host      <- "http://d396qusza40orc.cloudfront.net/repdata/"
+storm.data.url <- paste0(repo.host, "data/StormData.csv.bz2")
+storm.data.doc <- paste0(repo.host, "peer2_doc/pd01016005curr.pdf")
+storm.data.faq <- paste0(repo.host, "peer2_doc/NCDC%20Storm%20Events-FAQ%20Page.pdf")
 storm.data.bz2 <- "StormData.csv.bz2"
 storm.data.events.file <- "StormDataEventTable.csv"
 
@@ -66,7 +66,7 @@ storm.data.headers <- names(read.csv(storm.data.bz2, header = TRUE, nrow = 1))
 # answers i.e. storm data that impacts health or property
 header.char.classes <- rep("NULL", 37)
 # set the variables we are interested in to type char so they read in quickly
-header.char.classes[c(2,8,23:28,36:37)] <- "character"
+header.char.classes[c(2,8,23:28,36,37)] <- "character"
 # verify the mapping
 cbind(storm.data.headers, header.char.classes)
 ```
@@ -112,10 +112,10 @@ cbind(storm.data.headers, header.char.classes)
 ## [37,] "REFNUM"           "character"
 ```
 
-The data is loaded and prepared for analysis. Three levels of filters applied:
-1. Date: only the storm data collected after January 1, 1996 is used
+The data is loaded and prepared for analysis. Three levels of filters applied:  
+1. Date: only the storm data collected after January 1, 1996 is used  
 2. Fields: only the fields needed to answer the questions, as shown in the table
-above, is used
+above, is used  
 3. Impact: only storm events that had a health or financial impact is used
 
 The date filter still leaves nearly two thirds of a million storm events, many
@@ -164,9 +164,9 @@ standard_events <- read.csv(storm.data.events.file,
 storm.data.events <- unique(storm.data$EVTYPE)
 ```
 
-The storm data contains **222** unique storm event
-types in contrast to the 48 standard event
-types. It would greatly simplify the analysis if the 
+The remaining storm data contains **222** unique storm
+event types in contrast to the 48 standard
+event types. It would greatly simplify the analysis if the
 222 unique storm event types could be grouped into the
 48 standard event types. Since the filtered
 data contains 201313 storm events, it is obvious that
@@ -207,8 +207,8 @@ replace_event_wo <- function(src, pattern, exclude, replacement) {
 }
 ```
 
-Using these functions the storm data events can be mapped into the standard
-events.
+Using these functions almost all of the storm data events can be mapped into the
+standard events.
 
 
 ```r
