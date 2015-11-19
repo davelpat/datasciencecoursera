@@ -1,7 +1,7 @@
 ---
-title: "Exploring the Central Limit Theorem with the exponential distribution"
+title: "Exploring the Central Limit Theorem with the Exponential Distribution"
 author: "Dave Patterson"
-date: "September 20, 2015"
+date: "November 18, 2015"
 output: html_document
 ---
 
@@ -13,49 +13,61 @@ I will also compare the distribution of a large collection of random exponential
 distribution of a large collection of averages of 40 exponentials.
 
 ## Simulations: 
-Include English explanations of the simulations you ran, with the accompanying R code.
-Your explanations should make clear what the R code accomplishes.
+Two simulations were run: one for the means and one for the variance. Both use a common function to run the simulations. The `rexp_sim` function runs the requested iterations of a set of 40 (the default) samples of the random exponential distribution, using `rexp`, with a lambda of 1/5.
 
-```{r simulations}
+```{r simulations, cache=TRUE}
 lambda <- 0.2
-hist(rexp(1000, lambda), breaks = 50)
 
 # rexp_sim returns a vector that has a function applied to a number of samples of random exponentials
-rexp_sim <- function (iterations, func, sample.size = 40, lambda = 0.2) {
+rexp_sim <- function (func, iterations = 1000, sample.size = 40, lambda = 0.2) {
   sim.vec = NULL
   for (i in 1 : iterations) sim.vec = c(sim.vec, func(rexp(sample.size, lambda)))
   sim.vec
 }
 
-means <- rexp_sim(1000, mean)
-
-sds <- rexp_sim(1000, sd)
-
+means <- rexp_sim(mean)
+vars  <- rexp_sim(var)
 ```
 
 ## Sample Mean versus Theoretical Mean: 
-Include figures with titles. In the figures, highlight the means you are comparing. 
-Include text that explains the figures and what is shown on them, and provides
-appropriate numbers.
-
 ```{r means comparison}
-exp.mean <- 1 / lambda
-means.ave <- mean(means)
-hist(means, breaks = 50)
+exp.mean   <- 1 / lambda
+means.ave  <- mean(means)
+```
+
+The theoretical mean of `rexp` is 1 / lambda, in this case **`r exp.mean`**. The average mean of our simulation is **`r round(means.ave, 5)`**, which is very close to the theoretical mean. In the plot below, the simulation average mean is virtually eclipsed by the theoretical mean.
+
+```{r means plot}
+my_hist <- function(param, label, theoretical, simulation) {
+  hist(param, breaks = 50,
+       main = paste("Histogram of Simulation", label),
+       xlab = label)
+  abline(v = simulation,  lw = 3, col = "red")
+  abline(v = theoretical, lw = 3, col = "seagreen")
+  legend("topright", c("Simulation Average", 
+                       "Theoretical"), 
+         lwd=3,  col=c("red", "seagreen"))
+}
+
+means.hist <- my_hist(means, "Means", exp.mean, means.ave)
 ```
 
 ## Sample Variance versus Theoretical Variance: 
-Include figures (output from R) with titles. Highlight the variances you are comparing. 
-Include text that explains your understanding of the differences of the variances.
 
 ```{r variances comparison}
-exp.var <- 1 / lambda
-sds.ave <- mean(sds)
-hist(sds, breaks = 50)
+exp.var   <- (1 / lambda)^2
+vars.ave  <- mean(vars)
+```
+
+The theoretical variances of `rexp` is the standard deviation squared, in this case **`r exp.var`**. The average variance of our simulation is **`r round(vars.ave, 5)`**, which is again very close to the theoretical variance, as can be seen below.
+
+```{r variances plot}
+vars.hist <- my_hist(vars, "Variances", exp.var, vars.ave)
 ```
 
 ## Distribution: 
-Via figures and text, explain how one can tell the distribution is approximately normal.
+Taking a sample of 1000 random exponentials, we see the distribution is indeed approximately expontential, not normal.
 
 ```{r distributions comparison}
+hist(rexp(1000, lambda), breaks = 50)
 ```
