@@ -1,0 +1,16 @@
+---
+title: "ToothGrowth Analysis"
+author: "Dave Patterson"
+date: "November 21, 2015"
+output: pdf_document
+---
+
+## Overview
+
+## Data Summary
+
+## Hypothesis
+
+## Conclusions
+
+## Appendix
