@@ -7,10 +7,46 @@ output: pdf_document
 
 ## Overview
 
+This data shows the effect of Vitamin C on tooth growth in guinea pigs.
+
 ## Data Summary
+
+```{r load libs}
+packages <- c("datasets", "data.table", "dplyr", "ggplot2")
+sapply(packages, require, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)
+```
+
+The data set  reflects the length of teeth in each of 10 guinea pigs at each of
+three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery
+methods (orange juice or ascorbic acid).
+
+```{r basic summary}
+tg.df <- tbl_df(ToothGrowth)
+
+str(tg.df)
+summary(tg.df)
+table(tg.df$supp, tg.df$dose)
+```
+
+Plotting the data reveals that the two delivery mthods have different impacts at
+different dosages. In partlicular, asorbic acid appears to be less effective
+than orange juice except at the highest dose where it appears to be more
+effective for increasing tooth length. See the Appendix for a boxplot suggesting
+this.
 
 ## Hypothesis
 
 ## Conclusions
 
+\pagebreak
+
 ## Appendix
+
+```{r boxplot}
+ggplot(tg.df, aes(x = dose, y = len)) + 
+  ggtitle("Tooth Length by Dose and Delivery") +
+  labs(x = "Dose", y = "Tooth Length") +
+  geom_boxplot(aes(x = as.factor(dose), fill = supp), position = "dodge") +
+  scale_fill_discrete(name="Delivery\nMechanism",
+                      labels=c("Orange\nJuice", "Ascorbic\nAcid"))
+```
