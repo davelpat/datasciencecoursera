@@ -114,7 +114,7 @@ clt.dat  <- sim_param(clt_func, dat = rexp.mat, sample.size)
 clt.mean <- mean(clt.dat$x)
 ggplot(clt.dat, aes(x = x)) +
   ggtitle("Histogram of Simulation Means and CLT") + 
-  xlab("Means") + ylab("Density") +
+  labs(x = "Means", y = "Density") +
   geom_histogram(binwidth = 0.2, aes(y = ..density..), fill = "lightblue", color = "black") +
   geom_vline(aes(xintercept=clt.mean), color = "red") +
   stat_function(fun = dnorm, size = 2)
