@@ -2,31 +2,43 @@
 title: "Exploring the Central Limit Theorem with the Exponential Distribution"
 author: "Dave Patterson"
 date: "November 18, 2015"
-output: html_document
+output: 
+  pdf_document: 
+    toc: yes
+  html_document: default
 ---
 
 ## Overview: 
 
-I will investigate the exponential distribution and compare it with the Central Limit Theorem. 
-To do this, I will compare some sample means and variances to their theoretical values. 
-I will also compare the distribution of a large collection of random exponentials and the 
-distribution of a large collection of averages of 40 exponentials.
+I will investigate the exponential distribution and compare it with the Central 
+Limit Theorem. To do this, I will compare some sample means and variances to
+their theoretical values. I will also compare the distribution of a large
+collection of random exponentials and the distribution of a large collection of
+averages of 40 exponentials.
 
 ## Simulations: 
-Two simulations were run: one for the means and one for the variance. Both use a common function to run the simulations. The `rexp_sim` function runs the requested iterations of a set of 40 (the default) samples of the random exponential distribution, using `rexp`, with a lambda of 1/5.
+One simulation data run was used for consistency across the plots. The data
+consist of 1000 iterations of a set of 40 samples of the random exponential
+distribution, using `rexp`, with a lambda of 1/5. Plots were created for
+exploring the means, the variance, and the central limit theorem. The
+`sim_param` function runs the requested function (`mean`, `var`, or `clt_func`)
+on the data set.
 
 ```{r simulations, cache=TRUE}
-lambda <- 0.2
 
-# rexp_sim returns a vector that has a function applied to a number of samples of random exponentials
-rexp_sim <- function (func, iterations = 1000, sample.size = 40, lambda = 0.2) {
-  sim.vec = NULL
-  for (i in 1 : iterations) sim.vec = c(sim.vec, func(rexp(sample.size, lambda)))
-  sim.vec
+# generate the simulation data of random exponentials samples
+lambda <- 0.2
+iterations <- 1000
+sample.size <- 40
+rexp.mat  <- matrix(rexp(iterations * sample.size, lambda), iterations)
+
+# sim_param returns a dataframe that has a function applied to the sample data 
+sim_param <- function (func, dat = rexp.mat, ...) {
+  data.frame(x = c(apply(dat, 1, func, ...)))
 }
 
-means <- rexp_sim(mean)
-vars  <- rexp_sim(var)
+means <- sim_param(mean)$x
+vars  <- sim_param(var)$x
 ```
 
 ## Sample Mean versus Theoretical Mean: 
@@ -35,22 +47,11 @@ exp.mean   <- 1 / lambda
 means.ave  <- mean(means)
 ```
 
-The theoretical mean of `rexp` is 1 / lambda, in this case **`r exp.mean`**. The average mean of our simulation is **`r round(means.ave, 5)`**, which is very close to the theoretical mean. In the plot below, the simulation average mean is virtually eclipsed by the theoretical mean.
-
-```{r means plot}
-my_hist <- function(param, label, theoretical, simulation) {
-  hist(param, breaks = 50,
-       main = paste("Histogram of Simulation", label),
-       xlab = label)
-  abline(v = simulation,  lw = 3, col = "red")
-  abline(v = theoretical, lw = 3, col = "seagreen")
-  legend("topright", c("Simulation Average", 
-                       "Theoretical"), 
-         lwd=3,  col=c("red", "seagreen"))
-}
-
-means.hist <- my_hist(means, "Means", exp.mean, means.ave)
-```
+The theoretical mean of `rexp` is 1 / lambda, in this case **`r exp.mean`**. The
+average mean of our simulation is **`r round(means.ave, 5)`**, which is very
+close to the theoretical mean. In the Simulation Means histogram in the
+appendix, the simulation average mean is virtually eclipsed by the theoretical
+mean.
 
 ## Sample Variance versus Theoretical Variance: 
 
@@ -59,15 +60,62 @@ exp.var   <- (1 / lambda)^2
 vars.ave  <- mean(vars)
 ```
 
-The theoretical variances of `rexp` is the standard deviation squared, in this case **`r exp.var`**. The average variance of our simulation is **`r round(vars.ave, 5)`**, which is again very close to the theoretical variance, as can be seen below.
-
-```{r variances plot}
-vars.hist <- my_hist(vars, "Variances", exp.var, vars.ave)
-```
+The theoretical variances of `rexp` is the standard deviation squared, in this
+case **`r exp.var`**. The average variance of our simulation is 
+**`r round(vars.ave, 5)`**, which is again very close to the theoretical
+variance, as can be seen in the Appendix.
 
 ## Distribution: 
-Taking a sample of 1000 random exponentials, we see the distribution is indeed approximately expontential, not normal.
+
+If we apply the central limit theorem to the distribution of means from
+the simulation and overlay it with a standard normal curve, we can see that the
+distribution of the simulation means are approximately normal.
+
+\pagebreak
+
+## Appendix:
+### Code and Plots for Simulation Means
+```{r means plot}
+my_hist <- function(param, label, theoretical, simulation) {
+  hist(param, breaks = 50,
+       main = paste("Histogram of Simulation", label),
+       col = "lightblue", 
+       xlab = label)
+  abline(v = simulation,  lw = 3, col = "red")
+  abline(v = theoretical, lw = 3, col = "seagreen")
+  legend("topright", c("Simulation Average", "Theoretical"), 
+         lwd=3,  col=c("red", "seagreen"))
+}
+
+my_hist(means, "Means", exp.mean, means.ave)
+```
+
+\pagebreak
+
+### Code and Plots for Simulation Variance
+
+```{r variances plot}
+my_hist(vars, "Variances", exp.var, vars.ave)
+```
+
+\pagebreak
+
+### Code and Plots for Comparing Simulation Means to CLT
 
 ```{r distributions comparison}
-hist(rexp(1000, lambda), breaks = 50)
+require(ggplot2)
+
+# define the central limit theorem function
+exp.sd <- 1 / lambda
+clt_func <- function(x, n) sqrt(n) * (mean(x) - exp.mean) / exp.sd
+# and apply it to the same simulation data
+clt.dat  <- sim_param(clt_func, dat = rexp.mat, sample.size)
+
+clt.mean <- mean(clt.dat$x)
+ggplot(clt.dat, aes(x = x)) +
+  ggtitle("Histogram of Simulation Means and CLT") + 
+  xlab("Means") + ylab("Density") +
+  geom_histogram(binwidth = 0.2, aes(y = ..density..), fill = "lightblue", color = "black") +
+  geom_vline(aes(xintercept=clt.mean), color = "red") +
+  stat_function(fun = dnorm, size = 2)
 ```
